@@ -1,11 +1,12 @@
 __author__ = 'francesco'
 
 class Parser:
-    valore = 0
 
-    def __init__(self, value):
-        self.valore = value
-        print("init parser " + str(self.valore))
+    #def __init__(self):
+        #print("init parser")
 
-    def hello(self, valore):
-        print(valore, "sono padre")
+    def hello(self):
+        print("sono padre")
+
+    def parse(self, file):
+        return
