@@ -1,5 +1,5 @@
 import pandas as pd
-from Parser import Parser
+from parsers.Parser import Parser
 
 __author__ = 'francesco'
 
@@ -22,4 +22,5 @@ class SarParser (Parser):
         #print(dataframe.dtypes)
         #print(dataframe.index.values)
 
+        csvfile.close()
         return dataframe

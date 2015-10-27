@@ -1,5 +1,5 @@
 import pandas as pd
-from Parser import Parser
+from parsers.Parser import Parser
 
 __author__ = 'francesco'
 
@@ -35,4 +35,6 @@ class PCMParser (Parser):
                                 names=self.columns, decimal='.', index_col=False,
                                 parse_dates={Parser.TIMESTAMP_STR: [0, 1]},
                                 date_parser = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'))
+
+        csvfile.close()
         return dataframe

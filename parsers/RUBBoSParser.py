@@ -1,4 +1,4 @@
-from Parser import Parser
+from parsers.Parser import Parser
 import pandas as pd
 
 __author__ = 'francesco'
@@ -17,4 +17,5 @@ class RUBBoSParser (Parser):
         #print(dataframe.dtypes)
         #print(dataframe.index.values)
 
+        csvfile.close()
         return dataframe
