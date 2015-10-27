@@ -29,6 +29,6 @@ rubbos_dataframe = RUBBoSParser().parse(rubbos_file)
 perf_dataframe = PerfParser().parse(perf_file)
 
 #LinearRegression().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
-#RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
+RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
 
-#print(perf_dataframe)
+#print(rubbos_dataframe)

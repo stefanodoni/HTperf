@@ -4,6 +4,8 @@ __author__ = 'francesco'
 
 class Parser:
     TIMESTAMP_STR = "Timestamp"
+    TIMESTAMP_START_STR = "Timestamp Start"
+    TIMESTAMP_END_STR = "Timestamp End"
 
     #def __init__(self):
         #print("init parser")
