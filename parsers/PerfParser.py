@@ -22,4 +22,13 @@ class PerfParser (Parser):
                                 na_values='NaN')
 
         csvfile.close()
+
+        # Pivot the dataframe in order to have columns divided by HW Elements (CPU) and by Events monitored by perf
+        # pivot_table uses a default mean function over the values! Be careful.
+        vals = ['Value']
+        index = [Parser.TIMESTAMP_STR]
+        cols = ['CPU', 'Event']
+
+        dataframe = pd.pivot_table(dataframe, values=vals, index=index, columns=cols).reset_index()
+
         return dataframe

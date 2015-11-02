@@ -19,6 +19,11 @@ class RANSACRegressor:
             X = X[~np.isnan(X)]
             X_label = "Total average Throughput"
 
+        # Add outlier data
+        n_outliers = 50
+        X[:n_outliers] = 3
+        y[:n_outliers] = -3
+
         X = X.reshape(len(X), 1)
         y = y.reshape(len(y), 1)
 

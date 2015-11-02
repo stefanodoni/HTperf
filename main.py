@@ -1,4 +1,9 @@
 import sys
+import argparse
+import sqlite3
+import sqlalchemy as sqlal
+import pandas as pd
+from parsers.Parser import Parser
 from parsers.SarParser import SarParser
 from parsers.PCMParser import PCMParser
 from parsers.RUBBoSParser import RUBBoSParser
@@ -8,27 +13,75 @@ from statistics.RANSACRegressor import RANSACRegressor
 
 __author__ = 'francesco'
 
-if len(sys.argv) < 5:
-    print("Need csv file params!")
-    sys.exit()
+parser = argparse.ArgumentParser(description='HTperf tool: parse, aggregate, select and plot data.')
+parser.add_argument('dir', metavar='dir', help='directory containing all csv report files')
+args = parser.parse_args()
 
-sar_file = sys.argv[1]
-pcm_file = sys.argv[2]
-rubbos_file = sys.argv[3]
-perf_file = sys.argv[4]
+sar_file = args.dir + "/sar.csv"
+pcm_file = args.dir + "/pcm.csv"
+rubbos_file = args.dir + "/rubbos.csv"
+perf_file = args.dir + "/perf.csv"
 
-sar_dataframe1 = SarParser().parse(sar_file)
-
-sar_dataframe2 = SarParser().select_dataframe_interval_by_timestap(sar_dataframe1, '2015-10-11 02:44:00', '2015-10-11 02:46:15')
-
-pcm_dataframe1 = PCMParser().parse(pcm_file)
-pcm_dataframe2 = PCMParser().select_dataframe_interval_by_timestap(pcm_dataframe1, '2015-10-11 02:44:00', '2015-10-11 02:46:15')
-
+# ======================= DATA IMPORT =============================
 rubbos_dataframe = RUBBoSParser().parse(rubbos_file)
+
+sar_dataframe = SarParser().parse(sar_file)
+#sar_dataframe = SarParser().select_dataframe_interval_by_timestap(sar_dataframe, '2015-10-11 02:44:00', '2015-10-11 02:46:15')
+
+pcm_dataframe = PCMParser().parse(pcm_file)
+#pcm_dataframe2 = PCMParser().select_dataframe_interval_by_timestap(pcm_dataframe, '2015-10-11 02:44:00', '2015-10-11 02:46:15')
 
 perf_dataframe = PerfParser().parse(perf_file)
 
-#LinearRegression().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
-RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
+# ======================= PERSIST DATA IN SQLITE ====================
+conn = sqlite3.connect('htperf.db')
+c = conn.cursor()
 
-#print(rubbos_dataframe)
+c.execute("DROP TABLE IF EXISTS rubbos")
+c.execute("DROP TABLE IF EXISTS sar")
+c.execute("DROP TABLE IF EXISTS pcm")
+c.execute("DROP TABLE IF EXISTS perf")
+
+rubbos_dataframe.to_sql('rubbos', conn)
+sar_dataframe.to_sql('sar', conn)
+pcm_dataframe.to_sql('pcm', conn)
+perf_dataframe.to_sql('perf', conn)
+
+conn.commit()
+
+# Query to show table fields: PRAGMA table_info(tablename)
+
+# for row in c.execute("SELECT * FROM pcm"):
+#     print(row)
+
+# c.execute("SELECT * FROM prova")
+# print(c.fetchone())
+
+print(pd.read_sql_query("SELECT * FROM perf", conn))
+#print(pd.read_sql_query("SELECT * FROM rubbos WHERE \"Timestamp Start\" < \"2015-10-11 08:14:18\"", conn))
+
+# c.execute("DROP TABLE IF EXISTS prova")
+# c.execute("CREATE TABLE prova (c1, c2, asd TEXT)")
+# c.execute("INSERT INTO prova VALUES (5,3,4)")
+
+conn.close()
+
+# Alternative to sqlite3: SQLAlchemy in order to use pd.read_sql_table
+#engine = sqlal.create_engine('sqlite:///htperf.db')
+#print(pd.read_sql_table('rubbos', engine))
+#print(pd.read_sql_query("SELECT * FROM rubbos WHERE \"Timestamp Start\" <= \"2015-10-11 08:14:18\"", engine))
+
+
+
+# ======================= STATISTICS =====================================
+#LinearRegression().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
+#RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
+
+
+
+
+
+
+
+
+

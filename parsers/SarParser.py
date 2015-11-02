@@ -15,7 +15,8 @@ class SarParser (Parser):
     def parse(self, file):
         csvfile = open(file, 'rb')
         dataframe = pd.read_csv(csvfile, sep=';', header=None, names=self.columns,
-                                decimal=',', parse_dates=[2]) #DataFrame obj
+                                decimal=',', index_col=False,
+                                parse_dates=[2]) #DataFrame obj
 
         #dataframe.columns = self.columns
         #dataframe['Timestamp'] = dataframe['Timestamp'].apply(pd.to_datetime)
