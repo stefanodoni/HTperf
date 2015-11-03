@@ -20,10 +20,13 @@ args = parser.parse_args()
 sar_file = args.dir + "/sar.csv"
 pcm_file = args.dir + "/pcm.csv"
 rubbos_file = args.dir + "/rubbos.csv"
+rubbos_global_file = args.dir + "/rubbos-global.csv"
 perf_file = args.dir + "/perf.csv"
 
 # ======================= DATA IMPORT =============================
 rubbos_dataframe = RUBBoSParser().parse(rubbos_file)
+
+rubbos_global_dataframe = RUBBoSParser().parse(rubbos_global_file, "global")
 
 sar_dataframe = SarParser().parse(sar_file)
 #sar_dataframe = SarParser().select_dataframe_interval_by_timestap(sar_dataframe, '2015-10-11 02:44:00', '2015-10-11 02:46:15')
@@ -38,11 +41,13 @@ conn = sqlite3.connect('htperf.db')
 c = conn.cursor()
 
 c.execute("DROP TABLE IF EXISTS rubbos")
+c.execute("DROP TABLE IF EXISTS rubbos_global")
 c.execute("DROP TABLE IF EXISTS sar")
 c.execute("DROP TABLE IF EXISTS pcm")
 c.execute("DROP TABLE IF EXISTS perf")
 
 rubbos_dataframe.to_sql('rubbos', conn)
+rubbos_global_dataframe.to_sql('rubbos_global', conn)
 sar_dataframe.to_sql('sar', conn)
 pcm_dataframe.to_sql('pcm', conn)
 perf_dataframe.to_sql('perf', conn)
@@ -57,7 +62,7 @@ conn.commit()
 # c.execute("SELECT * FROM prova")
 # print(c.fetchone())
 
-print(pd.read_sql_query("SELECT * FROM perf", conn))
+print(pd.read_sql_query("SELECT * FROM rubbos_global", conn))
 #print(pd.read_sql_query("SELECT * FROM rubbos WHERE \"Timestamp Start\" < \"2015-10-11 08:14:18\"", conn))
 
 # c.execute("DROP TABLE IF EXISTS prova")

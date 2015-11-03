@@ -6,7 +6,7 @@ import datetime as dt
 __author__ = 'francesco'
 
 class PerfParser (Parser):
-    columns = [Parser.TIMESTAMP_STR, 'CPU', 'Value', 'Blank', 'Event']
+    columns = [Parser.TIMESTAMP_STR, 'HWElem', 'Value', 'Blank', 'Event']
 
     def parse(self, file):
         csvfile = open(file, 'rb')
@@ -23,12 +23,19 @@ class PerfParser (Parser):
 
         csvfile.close()
 
-        # Pivot the dataframe in order to have columns divided by HW Elements (CPU) and by Events monitored by perf
+        # Pivot the dataframe in order to have columns divided by HW Elements and by Events monitored by perf
         # pivot_table uses a default mean function over the values! Be careful.
         vals = ['Value']
         index = [Parser.TIMESTAMP_STR]
-        cols = ['CPU', 'Event']
+        cols = ['HWElem', 'Event']
 
         dataframe = pd.pivot_table(dataframe, values=vals, index=index, columns=cols).reset_index()
+
+        # Change dataframe columns names in order to import it into sqlite without complex columns names, i.e. ('Timestamp', '', '')
+        # New column name format: HWElement_Event
+        old_columns = dataframe.columns.tolist()
+        new_columns = ['{}_{}'.format(hw_elem, event) for value, hw_elem, event in old_columns[1:]] # Skip first item ('Timestamp', '', '')
+        new_columns.insert(0, Parser.TIMESTAMP_STR)
+        dataframe.columns = new_columns
 
         return dataframe
