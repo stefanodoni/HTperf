@@ -1,22 +1,35 @@
 from sklearn import linear_model
-import  numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 
 __author__ = 'francesco'
 
 class LinearRegression:
-    def print_diag(self, y_type, x_type, y_dataframe, x_dataframe):
-        if y_type == "sar":
-            y = y_dataframe.User.values + y_dataframe.Nice.values + y_dataframe.System.values # Total CPU Utilization
+    def print_diag(self, y_type, x_type, dataset):
+        if y_type == "U":
+            myarr = np.empty(shape=(1,len(dataset)))
+            for i in range(len(dataset)):
+                myarr[0][i] = dataset[i]['run'].UavgTot # Total RUBBoS average Utilization
+            y = myarr[0]
             y_label = "Total CPU Utilization"
-        elif y_type == "rubbos":
-            y = y_dataframe.UavgTot.values # Total RUBBoS average Utilization
-            y = y[~np.isnan(y)]
-            y_label = "Total CPU Utilization"
+        elif y_type == "R":
+            myarr = np.empty(shape=(1,len(dataset)))
+            for i in range(len(dataset)):
+                myarr[0][i] = dataset[i]['run'].RavgTot # Total RUBBoS average Response Time
+            y = myarr[0]
+            y_label = "Total average Response Time"
+        elif y_type == "IPC":
+            myarr = np.empty(shape=(1,len(dataset)))
+            for i in range(len(dataset)):
+                myarr[0][i] = dataset[i]['mean'].SysIPC # Mean PCM SysIPC
+            y = myarr[0]
+            y_label = "Average System IPC"
 
-        if x_type == "rubbos":
-            X = x_dataframe.XavgTot.values # Total RUBBoS average Throughput
-            X = X[~np.isnan(X)]
+        if x_type == "X":
+            myarr = np.empty(shape=(1,len(dataset)))
+            for i in range(len(dataset)):
+                myarr[0][i] = dataset[i]['run'].XavgTot # Total RUBBoS average Throughput
+            X = myarr[0]
             X_label = "Total average Throughput"
 
         # Reshape in order to have (length, 1) shape elements needed to use fitting
@@ -32,7 +45,7 @@ class LinearRegression:
         plt.title('Titolo')
         plt.xlabel(X_label)
         plt.ylabel(y_label)
-        plt.legend(loc='lower right')
+        plt.legend(loc='upper left')
 
         #plt.axes([0, 1500, 0, 100]) # Genera dei problemi
         plt.xlim(xmin=0)

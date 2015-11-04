@@ -3,6 +3,7 @@ import argparse
 import sqlite3
 import sqlalchemy as sqlal
 import pandas as pd
+import numpy as np
 from database import DBConstants
 from datasets.RUBBoSDataset import RUBBoSDataset
 from parsers.Parser import Parser
@@ -71,7 +72,7 @@ conn.commit()
 # c.execute("CREATE TABLE prova (c1, c2, asd TEXT)")
 # c.execute("INSERT INTO prova VALUES (5,3,4)")
 
-RUBBoSDataset().create(rubbos_dataframe, conn)
+rubbos_dataset = RUBBoSDataset().create(rubbos_dataframe, conn)
 
 conn.close()
 
@@ -83,7 +84,7 @@ conn.close()
 
 
 # ======================= STATISTICS =====================================
-#LinearRegression().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
+LinearRegression().print_diag("IPC", "X", rubbos_dataset)
 #RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
 
 
