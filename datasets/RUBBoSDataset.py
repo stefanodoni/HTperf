@@ -1,55 +1,34 @@
 from database import DBConstants
 from datasets.HTDataset import HTDataset
 from parsers.Parser import Parser
-from parsers.RUBBoSParser import RUBBoSParser
-import pandas as pd
-import numpy as np
+from statistics.StatsGenerator import StatsGenerator
 
 __author__ = 'francesco'
 
 class RUBBoSDataset (HTDataset):
     def create(self, dataframe, DBconn):
 
-        # The returned dataset is a list of dictionaries.
-        # Each dictionary has the following fields:
-        #   - run: Pandas DataFrame, contains the RUBBoS report of each run
-        #   - pcs: Pandas DataFrame, contains the PCM report
-        #   - mean: Pandas Series, contains the mean of all PCM PCs
-        #   - std: Pandas Series, contains the stdev of all PCM PCs
-        #   - max: Pandas Series, contains the max element of all PCM PCs
-        mydataset = []
+        # The returned dataset is a dictionary that contains the following fields:
+        #   - runs: Pandas DataFrame, contains the RUBBoS report of each run
+        #   - pcm-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of PCM PCs
+        #   - perf-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of Perf PCs
+        mydataset = {}
+        mydataset['runs'] = dataframe.copy()
 
-        # Extract and aggregate PCM data for each run
-        for row in dataframe.iterrows(): # Warning: iterrows possibily changes dtype of elements! Use itertuples instead
-            run = row[1]
+        # Extract and aggregate PCM data and Perf data for each run
+        mydataset['pcm-stats'] = StatsGenerator().extract(DBConstants.PCM_TABLE, DBconn,
+                                                          dataframe[Parser.TIMESTAMP_START_STR],
+                                                          dataframe[Parser.TIMESTAMP_END_STR])
 
-            tmp_dataset = {}
-            tmp_dataset['run'] = run
 
-            df = pd.read_sql_query("SELECT * "
-                              "FROM " + DBConstants.PCM_TABLE + " "
-                              "WHERE " + Parser.TIMESTAMP_STR + " >= '" + str(run[Parser.TIMESTAMP_START_STR]) + "' " +
-                              "AND " + Parser.TIMESTAMP_STR + " <= '" + str(run[Parser.TIMESTAMP_END_STR]) + "' ", DBconn)
+        mydataset['perf-stats'] = StatsGenerator().extract(DBConstants.PERF_TABLE, DBconn,
+                                                           dataframe[Parser.TIMESTAMP_START_STR],
+                                                           dataframe[Parser.TIMESTAMP_END_STR])
+        # Print csv reports
+        for i in mydataset['pcm-stats']:
+            mydataset['pcm-stats'][i].to_csv('pcm-' + i + '.csv', sep=';')
 
-            df.drop(['index', Parser.TIMESTAMP_STR], axis=1, inplace=True) # Remove first two cols, unused in stats
-
-            # Replace negative values with NaN, for statistical purpose
-            # tmp = df._get_numeric_data()
-            # tmp[tmp < 0] = np.nan
-            # tmp.insert(1, Parser.TIMESTAMP_STR, df[Parser.TIMESTAMP_STR])
-            df[df < 0] = np.nan
-
-            tmp_dataset['pcs'] = df
-
-            # Calculate mean, std and max of columns
-            mean = df.mean()
-            std = df.std()
-            max = df.max()
-
-            tmp_dataset['mean'] = mean
-            tmp_dataset['std'] = std
-            tmp_dataset['max'] = max
-
-            mydataset.append(tmp_dataset)
+        for i in mydataset['perf-stats']:
+            mydataset['perf-stats'][i].to_csv('perf-' + i + '.csv', sep=';')
 
         return mydataset

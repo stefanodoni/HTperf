@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 import sqlite3
 import sqlalchemy as sqlal
@@ -20,14 +21,23 @@ parser = argparse.ArgumentParser(description='HTperf tool: parse, aggregate, sel
 parser.add_argument('dir', metavar='dir', help='directory containing all csv report files')
 args = parser.parse_args()
 
-sar_file = args.dir + "/sar-client0.csv"
-pcm_file = args.dir + "/pcm.csv"
-rubbos_detailed_file = args.dir + "/rubbos-detailed.csv"
-rubbos_file = args.dir + "/rubbos.csv"
-perf_file = args.dir + "/perf.csv"
+directory = args.dir
+sar_file = directory + "/sar-client0.csv"
+pcm_file = directory + "/pcm.csv"
+rubbos_detailed_file = directory + "/rubbos-detailed.csv"
+rubbos_file = directory + "/rubbos.csv"
+perf_file = directory + "/perf.csv"
+
+# Scan for perf files
+# perf_files = []
+# for i in os.listdir(directory):
+#     if os.path.isfile(os.path.join(directory,i)) and 'perf' in i:
+#         perf_files.append(directory + '/' + i)
+#
+# print(perf_files)
 
 # ======================= DATA IMPORT =============================
-rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed")
+#rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed")
 
 rubbos_dataframe = RUBBoSParser().parse(rubbos_file)
 
@@ -40,16 +50,13 @@ pcm_dataframe = PCMParser().parse(pcm_file)
 perf_dataframe = PerfParser().parse(perf_file)
 
 # ======================= PERSIST DATA IN SQLITE ====================
+os.remove(DBConstants.DB_NAME) # Remove DB file and reconstruct it
 conn = sqlite3.connect(DBConstants.DB_NAME)
 c = conn.cursor()
 
-c.execute("DROP TABLE IF EXISTS " + DBConstants.RUBBOS_DETAILED_TABLE)
-c.execute("DROP TABLE IF EXISTS " + DBConstants.RUBBOS_TABLE)
-c.execute("DROP TABLE IF EXISTS " + DBConstants.SAR_TABLE)
-c.execute("DROP TABLE IF EXISTS " + DBConstants.PCM_TABLE)
-c.execute("DROP TABLE IF EXISTS " + DBConstants.PERF_TABLE)
+# c.execute("DROP TABLE IF EXISTS " + DBConstants.RUBBOS_DETAILED_TABLE)
 
-rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
+#rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
 rubbos_dataframe.to_sql(DBConstants.RUBBOS_TABLE, conn)
 sar_dataframe.to_sql(DBConstants.SAR_TABLE, conn)
 pcm_dataframe.to_sql(DBConstants.PCM_TABLE, conn)
@@ -58,8 +65,10 @@ perf_dataframe.to_sql(DBConstants.PERF_TABLE, conn)
 conn.commit()
 
 # Query to show table fields: PRAGMA table_info(tablename)
+# for row in c.execute("PRAGMA table_info(perf)"):
+#     print(row)
 
-# for row in c.execute("SELECT * FROM pcm"):
+# for row in c.execute("SELECT * FROM " + DBConstants.PERF_TABLE):
 #     print(row)
 
 # c.execute("SELECT * FROM prova")
@@ -84,7 +93,7 @@ conn.close()
 
 
 # ======================= STATISTICS =====================================
-LinearRegression().print_diag("IPC", "X", rubbos_dataset)
+#LinearRegression().print_diag("mean", "UavgTot", "run", "XavgTot", rubbos_dataset)
 #RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
 
 
