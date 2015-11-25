@@ -14,6 +14,8 @@ from parsers.RUBBoSParser import RUBBoSParser
 from parsers.PerfParser import PerfParser
 from statistics.LinearRegression import LinearRegression
 from statistics.RANSACRegressor import RANSACRegressor
+from statistics.HTLinearModel import HTLinearModel
+import config.SUTConfig as sut
 
 __author__ = 'francesco'
 
@@ -28,13 +30,8 @@ rubbos_detailed_file = directory + "/rubbos-detailed.csv"
 rubbos_file = directory + "/rubbos.csv"
 perf_file = directory + "/perf.csv"
 
-# Scan for perf files
-# perf_files = []
-# for i in os.listdir(directory):
-#     if os.path.isfile(os.path.join(directory,i)) and 'perf' in i:
-#         perf_files.append(directory + '/' + i)
-#
-# print(perf_files)
+# Create output directory
+os.makedirs(os.path.dirname(sut.OUTPUT_DIR), exist_ok=True)
 
 # ======================= DATA IMPORT =============================
 #rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed")
@@ -54,7 +51,6 @@ os.remove(DBConstants.DB_NAME) # Remove DB file and reconstruct it
 conn = sqlite3.connect(DBConstants.DB_NAME)
 c = conn.cursor()
 
-# c.execute("DROP TABLE IF EXISTS " + DBConstants.RUBBOS_DETAILED_TABLE)
 
 #rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
 rubbos_dataframe.to_sql(DBConstants.RUBBOS_TABLE, conn)
@@ -63,6 +59,8 @@ pcm_dataframe.to_sql(DBConstants.PCM_TABLE, conn)
 perf_dataframe.to_sql(DBConstants.PERF_TABLE, conn)
 
 conn.commit()
+
+# c.execute("DROP TABLE IF EXISTS " + DBConstants.RUBBOS_DETAILED_TABLE)
 
 # Query to show table fields: PRAGMA table_info(tablename)
 # for row in c.execute("PRAGMA table_info(perf)"):
@@ -93,6 +91,7 @@ conn.close()
 
 
 # ======================= STATISTICS =====================================
+HTLinearModel().estimate(rubbos_dataset)
 #LinearRegression().print_diag("mean", "UavgTot", "run", "XavgTot", rubbos_dataset)
 #RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
 

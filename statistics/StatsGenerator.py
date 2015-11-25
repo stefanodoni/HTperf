@@ -30,7 +30,6 @@ class StatsGenerator:
         tmp_std = pd.DataFrame(columns=mycolumns)
         tmp_max = pd.DataFrame(columns=mycolumns)
 
-
         for start, end in zip(startTS, endTS):
             # Extract dataframe
             df = pd.read_sql_query("SELECT * "
@@ -60,7 +59,6 @@ class StatsGenerator:
             max.columns = mycolumns
 
             tmp_max = tmp_max.append(max[1:])
-
 
         # Move index as column and drop it in order to have default integer index
         tmp_mean.reset_index(inplace=True)

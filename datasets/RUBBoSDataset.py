@@ -2,6 +2,7 @@ from database import DBConstants
 from datasets.HTDataset import HTDataset
 from parsers.Parser import Parser
 from statistics.StatsGenerator import StatsGenerator
+import config.SUTConfig as sut
 
 __author__ = 'francesco'
 
@@ -26,9 +27,9 @@ class RUBBoSDataset (HTDataset):
                                                            dataframe[Parser.TIMESTAMP_END_STR])
         # Print csv reports
         for i in mydataset['pcm-stats']:
-            mydataset['pcm-stats'][i].to_csv('pcm-' + i + '.csv', sep=';')
+            mydataset['pcm-stats'][i].to_csv(sut.OUTPUT_DIR + 'pcm-' + i + '.csv', sep=';')
 
         for i in mydataset['perf-stats']:
-            mydataset['perf-stats'][i].to_csv('perf-' + i + '.csv', sep=';')
+            mydataset['perf-stats'][i].to_csv(sut.OUTPUT_DIR + 'perf-' + i + '.csv', sep=';')
 
         return mydataset
