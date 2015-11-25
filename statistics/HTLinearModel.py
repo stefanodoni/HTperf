@@ -42,6 +42,9 @@ class HTLinearModel:
         Ci_atd = {}
         Sys_mean_atd = {}
 
+        Ci_cbt = {}
+        Sys_mean_cbt = {}
+
         if sut.CPU_HT_ACTIVE == 0 : # Hyperthreading OFF
             Ci_td1 = self.compute_td1(dataset)
             Ci_instr = self.compute_instr(dataset)
@@ -69,21 +72,28 @@ class HTLinearModel:
 
         Ci_atd = self.compute_atd(dataset, Ci_td1, Ci_td2)
         Sys_mean_atd = self.compute_sys_mean_atd(Ci_atd)
-
         # print(Ci_atd)
         # print(Sys_mean_atd)
+
+        Ci_cbt = self.compute_core_busy_time(dataset)
+        Sys_mean_cbt = self.compute_sys_mean_core_busy_time(Ci_cbt)
+        # print(Ci_cbt)
+        # print(Sys_mean_cbt)
+
+        # Export csv file with plotted data
+        self.gen_csv(dataset, Sys_mean_productivity, Sys_mean_atd, Sys_mean_cbt)
 
         # Linear Regression parameters
         num_samples = 4 # Number of the first runs to use in the Linear Regression (e.g. first 4 over 10)
         num_runs = 10 # Number of runs in one test
 
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
+        fig, axarr = plt.subplots(2, figsize=(8,8), sharex=True)
+        ax2 = axarr[0].twinx()
 
         X_line = [[i] for i in range(0, 1600)] # Used to plot streched estimated line
-        ax1.axhline(y=100, c="yellow", linestyle='--', linewidth=2) # Plot dashed yellow line to show 100 limit
+        axarr[0].axhline(y=100, c="yellow", linestyle='--', linewidth=2) # Plot dashed yellow line to show 100 limit
 
-        # Plot X vs Productivity
+        # Plot X vs Productivity on primary y axis axarr[0]
         X = dataset['runs']['XavgTot']
         X = X.reshape(len(X), 1)
 
@@ -97,12 +107,12 @@ class HTLinearModel:
         regr = lm.LinearRegression()
         regr.fit(X_lr, y_lr)
 
-        ax1.scatter(X, y, color='blue')
-        plot1 = ax1.plot(X_line, regr.predict(X_line), linewidth=2, label="C0 Productivity\n" +
+        axarr[0].scatter(X, y, color='blue')
+        plot1 = axarr[0].plot(X_line, regr.predict(X_line), linewidth=2, label="C0 Productivity\n" +
                                                                           "R^2: " + str(regr.score(X, y)) + "\n"
                                                                           "MAE: " + str(mae(y, regr.predict(X))))
 
-        # Plot X vs U
+        # Plot X vs U on primary y axis axarr[0]
         y = dataset['runs']['UavgTot']
         y = y.reshape(len(y), 1)
 
@@ -111,32 +121,45 @@ class HTLinearModel:
         regr = lm.LinearRegression()
         regr.fit(X_lr, y_lr)
 
-        ax1.scatter(X, y, color='green')
-        plot2 = ax1.plot(X_line, regr.predict(X_line), linewidth=2, label="Tot Avg Utilization\n" +
+        axarr[0].scatter(X, y, color='green')
+        plot2 = axarr[0].plot(X_line, regr.predict(X_line), linewidth=2, label="Tot Avg Utilization\n" +
                                                                           "R^2: " + str(regr.score(X, y)) + "\n"
                                                                           "MAE: " + str(mae(y, regr.predict(X))))
 
-        # Plot X vs R
+        # Plot X vs Core Busy Time on primary y axis axarr[0]
+        y = Sys_mean_cbt * 100
+        y = y.reshape(len(y), 1)
+
+        plot3 = axarr[0].scatter(X, y, color='black')
+
+        # Plot X vs Avg Thread Density on primary y axis axarr[1]
+        y = Sys_mean_atd
+        y = y.reshape(len(y), 1)
+
+        plot4 = axarr[1].scatter(X, y, color='violet')
+
+        # Plot X vs R on secondary y axis ax2
         y = dataset['runs']['RavgTot']
         y = y.reshape(len(y), 1)
 
-        plot3 = ax2.scatter(X, y, color='red')
+        plot5 = ax2.plot(X, y, '-o', color='red', label="Tot Avg Response Time")
 
         # Set plot title and labels
         plt.title(sut.TEST_NAME + '\nLinear Regressions considering first ' + str(num_samples) + ' samples')
-        ax1.set_xlabel('Throughput')
-        ax1.set_ylabel('Utilization')
+        axarr[1].set_xlabel('Throughput')
+        axarr[0].set_ylabel('Utilization')
+        axarr[1].set_ylabel('Tot Avg Thread Density')
         ax2.set_ylabel('Response Time')
 
         # Set plot legend
-        plots = plot1 + plot2
+        plots = plot1 + plot2 + plot5
         labels = [p.get_label() for p in plots]
-        lgd = ax1.legend(plots + [plot3], labels + ['Tot Avg Response Time'], scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.1))
+        lgd = axarr[1].legend(plots + [plot3] + [plot4], labels + ['Tot Avg Core Busy Time (C0 state)'] + ['Tot Avg Thread Density'], scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
 
         # Set axes limits
-        ax1.set_xlim(xmin=0)
-        ax1.set_ylim(ymin=0)
-        # ax1.set_ylim(ymin=0, ymax=100)
+        axarr[0].set_xlim(xmin=0)
+        axarr[0].set_ylim(ymin=0)
+        # axarr[0].set_ylim(ymin=0, ymax=100)
         ax2.set_ylim(ymin=0)
 
         # Print plot to file: png, pdf, ps, eps and svg
@@ -235,7 +258,7 @@ class HTLinearModel:
 
     # Compute the system global mean of Ci_productivity
     def compute_sys_mean_productivity(self, Ci_productivity):
-        result = pd.Series()
+        result = pd.Series(name='Sys_mean_productivity')
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
@@ -244,10 +267,11 @@ class HTLinearModel:
                     result = result.add(Ci_productivity['S' + str(s) + '-C' + str(c)])
 
         result = result / sut.CPU_PHYSICAL_CORES
+        result.name = "Sys_mean_productivity"
         return result
 
     # Compute Average Thread Density
-    # Ci_td1 / cpu_clk_unhalted_thread_any + 2 * Ci_td2 / cpu_clk_unhalted_thread_any
+    # Ci_atd = Ci_td1 / cpu_clk_unhalted_thread_any + 2 * Ci_td2 / cpu_clk_unhalted_thread_any
     def compute_atd(self, dataset, Ci_td1, Ci_td2=None):
         result = {}
         for s in range(sut.CPU_SOCKETS):
@@ -257,7 +281,7 @@ class HTLinearModel:
                 tmp_atd = tmp_atd.div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
 
                 tmp_td2 = Ci_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])\
-                                                                .multiply(2)
+                                                            .multiply(2)
                 tmp_atd = tmp_atd.add(tmp_td2)
 
                 result['S' + str(s) + '-C' + str(c)] = tmp_atd
@@ -266,7 +290,7 @@ class HTLinearModel:
 
     # Compute the system global mean of Ci_atd
     def compute_sys_mean_atd(self, Ci_atd):
-        result = pd.Series()
+        result = pd.Series(name='Sys_mean_atd')
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
@@ -275,8 +299,50 @@ class HTLinearModel:
                     result = result.add(Ci_atd['S' + str(s) + '-C' + str(c)])
 
         result = result / sut.CPU_PHYSICAL_CORES
+        result.name = "Sys_mean_atd"
+        return result
+
+    # Compute the core busy time (C0 state residency)
+    # Ci_cbt = cpu_clk_unhalted.ref_tsc / CPU_NOMINAL_FREQUENCY (that is TSC)
+    def compute_core_busy_time(self, dataset):
+        result = {}
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                tmp_ref_tsc = pd.Series()
+
+                for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                    if len(tmp_ref_tsc) == 0:
+                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                    else:
+                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+
+                tmp_ref_tsc = tmp_ref_tsc.div(sut.CPU_THREADS_PER_CORE)
+                result['S' + str(s) + '-C' + str(c)]  = tmp_ref_tsc.div(sut.CPU_NOMINAL_FREQUENCY)
+        return result
+
+    # Compute the system global mean of Ci_cbt
+    def compute_sys_mean_core_busy_time(self, Ci_cbt):
+        result = pd.Series()
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                if len(result) == 0:
+                    result = result.append(Ci_cbt['S' + str(s) + '-C' + str(c)])
+                else:
+                    result = result.add(Ci_cbt['S' + str(s) + '-C' + str(c)])
+
+        result = result / sut.CPU_PHYSICAL_CORES
+        result.name = "Sys_mean_cbt"
         return result
 
     # Generate csv file with graph data
-    def gen_csv(self):
-        return 'asd'
+    def gen_csv(self, dataset, *args):
+        df = pd.DataFrame()
+        df = df.append(dataset['runs']['TotClients'])
+        df = df.append(dataset['runs']['XavgTot'])
+        df = df.append(dataset['runs']['UavgTot'])
+        df = df.append(dataset['runs']['RavgTot'])
+
+        for i in args:
+            df = df.append(i) # Each Pandas Series must have a name setted! e.g. result.name = "myname"
+
+        df.T.to_csv(sut.OUTPUT_DIR + 'LRModel.csv', sep=';')

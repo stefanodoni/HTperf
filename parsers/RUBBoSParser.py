@@ -11,6 +11,7 @@ class RUBBoSParser (Parser):
                         'Xavg', 'Ravg', 'UtilCpu', 'TotClients',
                         'XavgTot', 'RavgTot', 'UavgTot', 'DemandCpu']
 
+    # Pass type = detailed if parsing a detailed RUBBoS report file
     def parse(self, file, type=None):
         csvfile = open(file, 'rb')
         dataframe = pd.read_csv(csvfile, sep=';', header=None, skiprows=1,

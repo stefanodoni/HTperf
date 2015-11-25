@@ -23,5 +23,5 @@ CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING = {'CPU' + str(i) : [i, i+2] for i in rang
 
 
 # Miscellaneous
-TEST_NAME = 'RUBBoS-5500-HT1-GPERF-TB1'
+TEST_NAME = 'RUBBoS-20151126-test-5500-HT1-GPOW-TB1'
 OUTPUT_DIR = '/home/francesco/Scrivania/' + TEST_NAME + '/'
