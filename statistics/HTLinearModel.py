@@ -39,13 +39,17 @@ class HTLinearModel:
         Ci_productivity = {}
         Sys_mean_productivity = pd.Series()
 
+        Ci_IPC_max_td_max = {}
+        Sys_mean_IPC_td_max = pd.Series()
+        Sys_mean_estimated_IPC = pd.Series()
+
         Ci_atd = {}
         Sys_mean_atd = {}
 
         Ci_cbt = {}
         Sys_mean_cbt = {}
 
-        if sut.CPU_HT_ACTIVE == 0 : # Hyperthreading OFF
+        if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
             Ci_td1 = self.compute_td1(dataset)
             Ci_instr = self.compute_instr(dataset)
 
@@ -62,7 +66,7 @@ class HTLinearModel:
         # print(Ci_instr['S0-C0'])
 
         Ci_instr_max = self.compute_instr_max(linear_model)
-        Ci_productivity = self.compute_productivity(Ci_instr, Ci_instr_max, sut.CPU_HT_ACTIVE)
+        Ci_productivity = self.compute_productivity(Ci_instr, Ci_instr_max)
         Sys_mean_productivity = self.compute_sys_mean_productivity(Ci_productivity)
 
         # print(linear_model['S0-C0'])
@@ -70,23 +74,34 @@ class HTLinearModel:
         # print(Ci_productivity)
         # print(Sys_mean_productivity)
 
-        Ci_atd = self.compute_atd(dataset, Ci_td1, Ci_td2)
+        Ci_IPC_max_td_max = self.compute_IPC_at_run_with_td_max(dataset, sut.START_RUN, sut.END_RUN)
+        Sys_mean_IPC_td_max = self.compute_sys_mean_IPC_at_td_max(Ci_IPC_max_td_max)
+        Sys_mean_estimated_IPC = self.compute_sys_mean_estimated_IPC(linear_model)
+
+        # print(Ci_max_IPC_td_max)
+        # print(Sys_max_IPC_td_max)
+        # print(Sys_mean_estimated_IPC)
+
+        if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
+            Ci_atd = self.compute_atd(dataset, Ci_td1)
+        else : # Hyperthreading ON
+            Ci_atd = self.compute_atd(dataset, Ci_td1, Ci_td2)
+
         Sys_mean_atd = self.compute_sys_mean_atd(Ci_atd)
+
         # print(Ci_atd)
         # print(Sys_mean_atd)
 
         Ci_cbt = self.compute_core_busy_time(dataset)
         Sys_mean_cbt = self.compute_sys_mean_core_busy_time(Ci_cbt)
+
         # print(Ci_cbt)
         # print(Sys_mean_cbt)
 
         # Export csv file with plotted data
-        self.gen_csv(dataset, Sys_mean_productivity, Sys_mean_atd, Sys_mean_cbt)
+        self.gen_csv(dataset, linear_model, Ci_IPC_max_td_max, Sys_mean_productivity, Sys_mean_atd, Sys_mean_cbt, Sys_mean_IPC_td_max, Sys_mean_estimated_IPC)
 
-        # Linear Regression parameters
-        num_samples = 4 # Number of the first runs to use in the Linear Regression (e.g. first 4 over 10)
-        num_runs = 10 # Number of runs in one test
-
+        # Plot results
         fig, axarr = plt.subplots(2, figsize=(8,8), sharex=True)
         ax2 = axarr[0].twinx()
 
@@ -97,12 +112,12 @@ class HTLinearModel:
         X = dataset['runs']['XavgTot']
         X = X.reshape(len(X), 1)
 
-        X_lr = X.reshape(-1, num_runs)[:,:num_samples].reshape(-1, 1) # Samples used to estimate the Linear Regression
+        X_lr = X.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
         y = Sys_mean_productivity * 100
         y = y.reshape(len(y), 1)
 
-        y_lr = y.reshape(-1, num_runs)[:,:num_samples].reshape(-1, 1) # Samples used to estimate the Linear Regression
+        y_lr = y.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
         regr = lm.LinearRegression()
         regr.fit(X_lr, y_lr)
@@ -116,7 +131,7 @@ class HTLinearModel:
         y = dataset['runs']['UavgTot']
         y = y.reshape(len(y), 1)
 
-        y_lr = y.reshape(-1, num_runs)[:,:num_samples].reshape(-1, 1) # Samples used to estimate the Linear Regression
+        y_lr = y.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
         regr = lm.LinearRegression()
         regr.fit(X_lr, y_lr)
@@ -145,7 +160,7 @@ class HTLinearModel:
         plot5 = ax2.plot(X, y, '-o', color='red', label="Tot Avg Response Time")
 
         # Set plot title and labels
-        plt.title(sut.TEST_NAME + '\nLinear Regressions considering first ' + str(num_samples) + ' samples')
+        plt.title(sut.TEST_NAME + '\nLinear Regressions considering first ' + str(sut.NUM_SAMPLES) + ' samples')
         axarr[1].set_xlabel('Throughput')
         axarr[0].set_ylabel('Utilization')
         axarr[1].set_ylabel('Tot Avg Thread Density')
@@ -235,6 +250,7 @@ class HTLinearModel:
                 regr.fit(X, y)
                 result['S' + str(s) + '-C' + str(c)] = {'model' : regr, 'coefficients': regr.coef_}
                 # print(regr.coef_)
+                # print(result)
         return result
 
     # For each Socket and for each Core i in Socket, compute Ci_instr_max at td1 and td2
@@ -242,18 +258,20 @@ class HTLinearModel:
         result = {}
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
-                result['S' + str(s) + '-C' + str(c)] = sut.CPU_NOMINAL_FREQUENCY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
+                # result['S' + str(s) + '-C' + str(c)] = sut.CPU_NOMINAL_FREQUENCY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
+                result['S' + str(s) + '-C' + str(c)] = sut.CPU_ACTUAL_MAX_FREQUENCY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
+
         return result
 
     # For each Socket and for each Core i in Socket, compute Productivity as Ci_instr / Ci_instr_max during each time interval
-    def compute_productivity(self, Ci_instr, Ci_instr_max, HT):
+    # If Hyperthreading ON, compute Productivity w.r.t. td2
+    # If Hyperthreading OFF, compute Productivity w.r.t. td1
+    def compute_productivity(self, Ci_instr, Ci_instr_max):
         result = {}
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
-                if HT == 1: # Hyperthreading ON, compute Productivity w.r.t. td2
-                    result['S' + str(s) + '-C' + str(c)] = Ci_instr['S' + str(s) + '-C' + str(c)] / Ci_instr_max['S' + str(s) + '-C' + str(c)][0][1]
-                else: # Hyperthreading OFF, compute Productivity w.r.t. td1
-                    result['S' + str(s) + '-C' + str(c)] = Ci_instr['S' + str(s) + '-C' + str(c)] / Ci_instr_max['S' + str(s) + '-C' + str(c)][0][0]
+                result['S' + str(s) + '-C' + str(c)] = Ci_instr['S' + str(s) + '-C' + str(c)] / Ci_instr_max['S' + str(s) + '-C' + str(c)][0][sut.CPU_HT_ACTIVE]
+
         return result
 
     # Compute the system global mean of Ci_productivity
@@ -280,9 +298,10 @@ class HTLinearModel:
                 # Calculate using unhalted clocks of the first logical core of cpu c
                 tmp_atd = tmp_atd.div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
 
-                tmp_td2 = Ci_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])\
+                if Ci_td2 != None:
+                    tmp_td2 = Ci_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])\
                                                             .multiply(2)
-                tmp_atd = tmp_atd.add(tmp_td2)
+                    tmp_atd = tmp_atd.add(tmp_td2)
 
                 result['S' + str(s) + '-C' + str(c)] = tmp_atd
 
@@ -303,7 +322,7 @@ class HTLinearModel:
         return result
 
     # Compute the core busy time (C0 state residency)
-    # Ci_cbt = cpu_clk_unhalted.ref_tsc / CPU_NOMINAL_FREQUENCY (that is TSC)
+    # Ci_cbt = cpu_clk_unhalted.ref_tsc / CPU_NOMINAL_FREQUENCY (that is TSC ?)
     def compute_core_busy_time(self, dataset):
         result = {}
         for s in range(sut.CPU_SOCKETS):
@@ -322,7 +341,7 @@ class HTLinearModel:
 
     # Compute the system global mean of Ci_cbt
     def compute_sys_mean_core_busy_time(self, Ci_cbt):
-        result = pd.Series()
+        result = pd.Series(name='Sys_mean_cbt')
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
@@ -334,8 +353,68 @@ class HTLinearModel:
         result.name = "Sys_mean_cbt"
         return result
 
+    # For each Socket and for each Core i in Socket, calculate real IPC at TD depending on the specified run
+    def compute_IPC_at_run_with_td_max(self, dataset, startRun, endRun):
+        startRun = startRun - 1
+
+        result = {}
+
+        # Compute and sort positions to be changed
+        positions = [i + 10 * times for i in range(startRun, endRun) for times in range(sut.NUM_RUNS)]
+        positions.sort()
+
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']['mean']))], dtype=float) # Set all to zero
+
+                for i in positions:
+                    for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                        result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i]
+
+                    # Calculate IPC at TD max using unhalted clocks of the first logical core of cpu c
+                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread'][i]
+
+        return result
+
+    # Compute the system global mean of Ci_max_IPC_td_max
+    def compute_sys_mean_IPC_at_td_max(self, Ci_IPC_max_td_max):
+        result = pd.Series(name='Sys_mean_IPC')
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                if len(result) == 0:
+                    result = result.append(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
+                else:
+                    result = result.add(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
+
+        result = result / sut.CPU_PHYSICAL_CORES
+        result.name = "Sys_mean_IPC"
+        return result
+
+    # Compute the system global mean of estimated IPC
+    # If HT is ON then the mean uses IPC estimation at TD = 2
+    # If HT is OFF then the mean uses IPC estimation at TD = 1
+    def compute_sys_mean_estimated_IPC(self, linear_model):
+        result = pd.Series(name='Sys_mean_estimated_IPC_TD' + str(2 if sut.CPU_HT_ACTIVE else 1))
+
+        inserted = False
+        index = 0
+
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                if not inserted :
+                    result = result.set_value(index, linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][sut.CPU_HT_ACTIVE])
+                    inserted = True
+                else:
+                    result[index] = result[index] + linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][sut.CPU_HT_ACTIVE]
+            index += 1
+            inserted = False
+
+        result = result / sut.CPU_PHYSICAL_CORES
+        result.name = "Sys_mean_estimated_IPC_TD" + str(2 if sut.CPU_HT_ACTIVE else 1)
+        return result
+
     # Generate csv file with graph data
-    def gen_csv(self, dataset, *args):
+    def gen_csv(self, dataset, linear_model, Ci_max_IPC_td_max, *args):
         df = pd.DataFrame()
         df = df.append(dataset['runs']['TotClients'])
         df = df.append(dataset['runs']['XavgTot'])
@@ -345,4 +424,17 @@ class HTLinearModel:
         for i in args:
             df = df.append(i) # Each Pandas Series must have a name setted! e.g. result.name = "myname"
 
-        df.T.to_csv(sut.OUTPUT_DIR + 'LRModel.csv', sep=';')
+        df = df.T
+
+        # After the transposition, add columns
+        # Print estimated IPC and computed real IPC
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                df['S' + str(s) + '-C' + str(c) + '-EST-IPC-TD1'] = linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][0]
+
+                if sut.CPU_HT_ACTIVE: # Hyperthreading ON
+                    df['S' + str(s) + '-C' + str(c) + '-EST-IPC-TD2'] = linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][1]
+
+                df['S' + str(s) + '-C' + str(c) + '-REAL-IPC-TD' + str(2 if sut.CPU_HT_ACTIVE else 1)] = Ci_max_IPC_td_max['S' + str(s) + '-C' + str(c)]
+
+        df.to_csv(sut.OUTPUT_DIR + 'LRModel.csv', sep=';')
