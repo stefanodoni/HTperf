@@ -13,9 +13,3 @@ class Parser:
     def hello(self):
         print("sono Parser")
         #print("{} sono figlio").format(valore)
-
-    # Timestamp string format: YYYY-MM-DD hh:mm:ss
-    def select_dataframe_interval_by_timestap(self, dataframe, start_ts, end_ts):
-        dataframe.set_index(self.TIMESTAMP_STR, inplace=True)
-        dataframe.sort_index()
-        return dataframe.loc[pd.to_datetime(start_ts) : pd.to_datetime(end_ts)]

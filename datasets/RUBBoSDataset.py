@@ -7,7 +7,7 @@ import config.SUTConfig as sut
 __author__ = 'francesco'
 
 class RUBBoSDataset (HTDataset):
-    def create(self, dataframe, DBconn):
+    def create(self, dataframe, DBconn, test_name):
 
         # The returned dataset is a dictionary that contains the following fields:
         #   - runs: Pandas DataFrame, contains the RUBBoS report of each run
@@ -27,9 +27,9 @@ class RUBBoSDataset (HTDataset):
                                                            dataframe[Parser.TIMESTAMP_END_STR])
         # Print csv reports
         for i in mydataset['pcm-stats']:
-            mydataset['pcm-stats'][i].to_csv(sut.OUTPUT_DIR + 'pcm-' + i + '.csv', sep=';')
+            mydataset['pcm-stats'][i].to_csv(sut.OUTPUT_DIR + '/' + test_name + '/pcm-' + i + '.csv', sep=';')
 
         for i in mydataset['perf-stats']:
-            mydataset['perf-stats'][i].to_csv(sut.OUTPUT_DIR + 'perf-' + i + '.csv', sep=';')
+            mydataset['perf-stats'][i].to_csv(sut.OUTPUT_DIR + '/' + test_name + '/perf-' + i + '.csv', sep=';')
 
         return mydataset

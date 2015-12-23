@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from database import DBConstants
 from datasets.RUBBoSDataset import RUBBoSDataset
+from graph_plotters.HTModelPlotter import HTModelPlotter
 from parsers.Parser import Parser
 from parsers.SarParser import SarParser
 from parsers.PCMParser import PCMParser
@@ -20,43 +21,66 @@ import config.SUTConfig as sut
 __author__ = 'francesco'
 
 parser = argparse.ArgumentParser(description='HTperf tool: parse, aggregate, select and plot data.')
-parser.add_argument('dir', metavar='dir', help='directory containing all csv report files')
+parser.add_argument('path', metavar='path', help='path to directories containing all csv report files')
 args = parser.parse_args()
 
-directory = args.dir
-sar_file = directory + "/sar-client0.csv"
-pcm_file = directory + "/pcm.csv"
-rubbos_detailed_file = directory + "/rubbos-detailed.csv"
-rubbos_file = directory + "/rubbos.csv"
-perf_file = directory + "/perf.csv"
+# Set path and file names
+path_to_tests = args.path
+
+test_names = [name for name in os.listdir(path_to_tests)]
+test_names.sort()
+test_numbers = [i + 1 for i in range(len(test_names))]
+
+# rubbos_detailed_file = "/rubbos-detailed.csv"
+rubbos_file = "/rubbos.csv"
+sar_file = "/sar-client0.csv"
+pcm_file = "/pcm.csv"
+perf_file = "/perf.csv"
 
 # Create output directory
-os.makedirs(os.path.dirname(sut.OUTPUT_DIR), exist_ok=True)
+for test in test_names:
+    os.makedirs(os.path.dirname(sut.OUTPUT_DIR + '/' + test + '/'), exist_ok=True)
+# os.makedirs(os.path.dirname(sut.OUTPUT_DIR), exist_ok=True)
+
+# Data structures
+rubbos_dataframes = {}
+sar_dataframes = {}
+pcm_dataframes = {}
+perf_dataframes = {}
+
+rubbos_datasets = {}
+
+ht_linear_models = {}
 
 # ======================= DATA IMPORT =============================
-#rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed")
+for test in test_names:
+    rubbos_dataframes[test] = RUBBoSParser().parse(path_to_tests + '/' + test + rubbos_file)
+    sar_dataframes[test] = SarParser().parse(path_to_tests + '/' + test + sar_file)
+    pcm_dataframes[test] = PCMParser().parse(path_to_tests + '/' + test + pcm_file)
+    perf_dataframes[test] = PerfParser().parse(path_to_tests + '/' + test + perf_file)
 
-rubbos_dataframe = RUBBoSParser().parse(rubbos_file)
-
-sar_dataframe = SarParser().parse(sar_file)
-#sar_dataframe = SarParser().select_dataframe_interval_by_timestap(sar_dataframe, '2015-10-11 02:44:00', '2015-10-11 02:46:15')
-
-pcm_dataframe = PCMParser().parse(pcm_file)
-#pcm_dataframe2 = PCMParser().select_dataframe_interval_by_timestap(pcm_dataframe, '2015-10-11 02:44:00', '2015-10-11 02:46:15')
-
-perf_dataframe = PerfParser().parse(perf_file)
+# rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed") # Only if using the detailed version of rubbos report file
+# rubbos_dataframe = RUBBoSParser().parse(directory + rubbos_file)
+# sar_dataframe = SarParser().parse(directory + sar_file)
+# pcm_dataframe = PCMParser().parse(directory + pcm_file)
+# perf_dataframe = PerfParser().parse(directory + perf_file)
 
 # ======================= PERSIST DATA IN SQLITE ====================
 os.remove(DBConstants.DB_NAME) # Remove DB file and reconstruct it
 conn = sqlite3.connect(DBConstants.DB_NAME)
 c = conn.cursor()
 
+for test in test_names:
+    rubbos_dataframes[test].to_sql(DBConstants.RUBBOS_TABLE, conn, if_exists='append')
+    sar_dataframes[test].to_sql(DBConstants.SAR_TABLE, conn, if_exists='append')
+    pcm_dataframes[test].to_sql(DBConstants.PCM_TABLE, conn, if_exists='append')
+    perf_dataframes[test].to_sql(DBConstants.PERF_TABLE, conn, if_exists='append')
 
 #rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
-rubbos_dataframe.to_sql(DBConstants.RUBBOS_TABLE, conn)
-sar_dataframe.to_sql(DBConstants.SAR_TABLE, conn)
-pcm_dataframe.to_sql(DBConstants.PCM_TABLE, conn)
-perf_dataframe.to_sql(DBConstants.PERF_TABLE, conn)
+# rubbos_dataframe.to_sql(DBConstants.RUBBOS_TABLE, conn)
+# sar_dataframe.to_sql(DBConstants.SAR_TABLE, conn)
+# pcm_dataframe.to_sql(DBConstants.PCM_TABLE, conn)
+# perf_dataframe.to_sql(DBConstants.PERF_TABLE, conn)
 
 conn.commit()
 
@@ -79,7 +103,10 @@ conn.commit()
 # c.execute("CREATE TABLE prova (c1, c2, asd TEXT)")
 # c.execute("INSERT INTO prova VALUES (5,3,4)")
 
-rubbos_dataset = RUBBoSDataset().create(rubbos_dataframe, conn)
+for test in test_names:
+    rubbos_datasets[test] = RUBBoSDataset().create(rubbos_dataframes[test], conn, test)
+
+# rubbos_dataset = RUBBoSDataset().create(rubbos_dataframe, conn)
 
 conn.close()
 
@@ -88,18 +115,39 @@ conn.close()
 #print(pd.read_sql_table('rubbos', engine))
 #print(pd.read_sql_query("SELECT * FROM rubbos WHERE \"Timestamp Start\" <= \"2015-10-11 08:14:18\"", engine))
 
-
-
 # ======================= STATISTICS =====================================
-HTLinearModel().estimate(rubbos_dataset)
+for test in test_names:
+    ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], test)
+
+# HTLinearModel().estimate(rubbos_dataset)
+
 #LinearRegression().print_diag("mean", "UavgTot", "run", "XavgTot", rubbos_dataset)
 #RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
 
+# ======================= PLOT GRAPHS =====================================
+plotter = HTModelPlotter().init()
 
+for test, num in zip(test_names, test_numbers):
+    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0, 'blue', str(num) + ') C0 Productivity', True)
+    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0, 'blue', str(num) + ') C0 Productivity LR', True)
 
+    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', str(num) + ') Tot Avg Utilization')
+    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', str(num) + ') Tot Avg Utilization LR')
 
+    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', str(num) + ') Tot Avg Core Busy Time (C0 state)', True)
 
+    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 1, 0, 'violet', str(num) + ') Tot Avg Thread Density')
 
+    plotter.plot_standard(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['RavgTot'], 0, 1, 'red', str(num) + ') Tot Avg Response Time', style='-o')
+
+title = ''
+for test, num in zip(test_names[:-1], test_numbers):
+    title = title + str(num) + ') ' + test + '\n'
+
+title = title + str(test_numbers[-1]) + ') ' + test_names[len(test_names) - 1]
+
+plotter.gen_graph(title + '\nLinear Regressions considering first ' + str(sut.NUM_SAMPLES) + ' samples',
+                  'Throughput', 'Utilization', 'Response Time', 'Tot Avg Thread Density')
 
 
 

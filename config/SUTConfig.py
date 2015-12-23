@@ -3,8 +3,16 @@ __author__ = 'francesco'
 # General settings to be changed according to the System Under Test (SUT) configuration
 
 # CPU SETTINGS
+# CPU_BASE_OPERATING_RATIO = 25 # RDMSR: Bits 15:8 of register 0xCEH, is the Max Non Turbo Ratio
+# CPU_BUS_CLOCK_FREQUENCY = 100000000 # BCLK for Intel SandyBridge and IvyBridge Architecture
+# CPU_BUS_CLOCK_FREQUENCY = 133330000 # BCLK for Nehalem Architecture
+# CPU_BASE_OPERATING_FREQUENCY = CPU_BASE_OPERATING_RATIO * CPU_BUS_CLOCK_FREQUENCY # Is the Reference Frequency
+
 CPU_NOMINAL_FREQUENCY = 2500000000 # That is the CPU Ref TSC
 
+# CPU_ACTUAL_MAX_FREQUENCY = 800000000
+# CPU_ACTUAL_MAX_FREQUENCY = 1200000000
+# CPU_ACTUAL_MAX_FREQUENCY = 1600000000
 # CPU_ACTUAL_MAX_FREQUENCY = 2000000000 # If HT ON TB OFF
 CPU_ACTUAL_MAX_FREQUENCY = 2500000000 # If HT ON and TB ON
 # CPU_ACTUAL_MAX_FREQUENCY = 2900000000 # If HT OFF and TB ON
@@ -27,13 +35,23 @@ else:
 CPU_LOGICAL_CORES = CPU_PHYSICAL_CORES * CPU_THREADS_PER_CORE
 
 # ==========================================================================
-# Benchmark Analysis Settings
-TEST_NAME = 'RUBBoS-20151208-5500-HT1-GPERF-TB1'
-OUTPUT_DIR = '/home/francesco/Scrivania/' + TEST_NAME + '/'
+# Benchmark Results Analysis Settings
+# TEST_NAME = 'RUBBoS-20151210-test-2600-HT1-GPOW-TB0-F1200'
+# OUTPUT_DIR = '/home/francesco/Scrivania/' + TEST_NAME + '/'
+OUTPUT_DIR = '/home/francesco/Scrivania/HTReports'
 
-# Linear Regression parameters
+# Test parameters (used for Linear Regression and others)
 NUM_SAMPLES = 4 # Number of the first runs to use in the Linear Regression (e.g. first 4 over 10)
-NUM_RUNS = 10 # Number of runs in one test
+NUM_RUNS = 10 # Number of runs in one test, usually 10 (i.e. number of steps in one growing load ladder)
+NUM_TESTS = 1 # Number of test repetitions, usually 10 (i.e. number of growing load ladders). Globally we have a number of single runs equal to NUM_RUNS * NUM_TESTS
+
+# Values to plot streched line
+# MAX_THROUGHPUT = 700 # Rubbos 2000 load
+# MAX_THROUGHPUT = 900 # Rubbos 2600 load
+# MAX_THROUGHPUT = 1200 # Rubbos 3400 load
+MAX_THROUGHPUT = 1500 # Rubbos 4400 load
+# MAX_THROUGHPUT = 1600 # Rubbos 5500 load
+# MAX_THROUGHPUT = 1800 # Rubbos 5500 load higher throughput
 
 # Runs to be considered in computing real IPC
 START_RUN = 9

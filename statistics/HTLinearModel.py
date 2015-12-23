@@ -29,161 +29,91 @@ class HTLinearModel:
     #
     # We can then correlate the run throughput with productivity and run utilization, plotting graphs and computing R^2
 
-    def estimate(self, dataset):
-        Ci_td1 = {}
-        Ci_td2 = {}
-        Ci_instr = {}
+    test_name = ''
 
-        linear_model = {}
-        Ci_instr_max = {}
-        Ci_productivity = {}
-        Sys_mean_productivity = pd.Series()
+    Ci_td1 = {}
+    Ci_td2 = {}
+    Ci_instr = {}
 
-        Ci_IPC_max_td_max = {}
-        Sys_mean_IPC_td_max = pd.Series()
-        Sys_mean_estimated_IPC = pd.Series()
+    linear_model = {}
+    Ci_instr_max = {}
+    Ci_productivity = {}
+    Sys_mean_productivity = pd.Series()
 
-        Ci_atd = {}
-        Sys_mean_atd = {}
+    Ci_IPC_max_td_max = {}
+    Sys_mean_IPC_td_max = pd.Series()
+    Sys_mean_estimated_IPC = pd.Series()
 
-        Ci_cbt = {}
-        Sys_mean_cbt = {}
+    Ci_atd = {}
+    Sys_mean_atd = {}
+
+    Ci_cbt = {}
+    Sys_mean_cbt = {}
+
+    Ci_frequency = {}
+    Sys_mean_frequency = pd.Series()
+
+    def estimate(self, dataset, test_name):
+        self.test_name = test_name
 
         if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
-            Ci_td1 = self.compute_td1(dataset)
-            Ci_instr = self.compute_instr(dataset)
+            self.Ci_td1 = self.compute_td1(dataset)
+            self.Ci_instr = self.compute_instr(dataset)
 
-            linear_model = self.estimate_IPCs(Ci_td1, Ci_instr)
+            self.linear_model = self.estimate_IPCs(self.Ci_td1, self.Ci_instr)
         else : # Hyperthreading ON
-            Ci_td2 = self.compute_td2(dataset)
-            Ci_td1 = self.compute_td1(dataset, Ci_td2)
-            Ci_instr = self.compute_instr(dataset)
+            self.Ci_td2 = self.compute_td2(dataset)
+            self.Ci_td1 = self.compute_td1(dataset, self.Ci_td2)
+            self.Ci_instr = self.compute_instr(dataset)
 
-            linear_model = self.estimate_IPCs(Ci_td1, Ci_instr, Ci_td2)
+            self.linear_model = self.estimate_IPCs(self.Ci_td1, self.Ci_instr, self.Ci_td2)
 
         # print(Ci_td2['S0-C0'])
         # print(Ci_td2)
         # print(Ci_instr['S0-C0'])
 
-        Ci_instr_max = self.compute_instr_max(linear_model)
-        Ci_productivity = self.compute_productivity(Ci_instr, Ci_instr_max)
-        Sys_mean_productivity = self.compute_sys_mean_productivity(Ci_productivity)
+        self.Ci_instr_max = self.compute_instr_max(self.linear_model)
+        self.Ci_productivity = self.compute_productivity(self.Ci_instr, self.Ci_instr_max)
+        self.Sys_mean_productivity = self.compute_sys_mean_productivity(self.Ci_productivity)
 
         # print(linear_model['S0-C0'])
         # print(Ci_instr_max['S0-C0'])
         # print(Ci_productivity)
         # print(Sys_mean_productivity)
 
-        Ci_IPC_max_td_max = self.compute_IPC_at_run_with_td_max(dataset, sut.START_RUN, sut.END_RUN)
-        Sys_mean_IPC_td_max = self.compute_sys_mean_IPC_at_td_max(Ci_IPC_max_td_max)
-        Sys_mean_estimated_IPC = self.compute_sys_mean_estimated_IPC(linear_model)
+        self.Ci_IPC_max_td_max = self.compute_IPC_at_run_with_td_max(dataset, sut.START_RUN, sut.END_RUN)
+        self.Sys_mean_IPC_td_max = self.compute_sys_mean_IPC_at_td_max(self.Ci_IPC_max_td_max)
+        self.Sys_mean_estimated_IPC = self.compute_sys_mean_estimated_IPC(self.linear_model)
 
         # print(Ci_max_IPC_td_max)
         # print(Sys_max_IPC_td_max)
         # print(Sys_mean_estimated_IPC)
 
         if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
-            Ci_atd = self.compute_atd(dataset, Ci_td1)
+            self.Ci_atd = self.compute_atd(dataset, self.Ci_td1)
         else : # Hyperthreading ON
-            Ci_atd = self.compute_atd(dataset, Ci_td1, Ci_td2)
+            self.Ci_atd = self.compute_atd(dataset, self.Ci_td1, self.Ci_td2)
 
-        Sys_mean_atd = self.compute_sys_mean_atd(Ci_atd)
+        self.Sys_mean_atd = self.compute_sys_mean_atd(self.Ci_atd)
 
         # print(Ci_atd)
         # print(Sys_mean_atd)
 
-        Ci_cbt = self.compute_core_busy_time(dataset)
-        Sys_mean_cbt = self.compute_sys_mean_core_busy_time(Ci_cbt)
+        self.Ci_cbt = self.compute_core_busy_time(dataset)
+        self.Sys_mean_cbt = self.compute_sys_mean_core_busy_time(self.Ci_cbt)
 
         # print(Ci_cbt)
         # print(Sys_mean_cbt)
 
+        self.Ci_frequency = self.compute_mean_frequencies(dataset)
+        self.Sys_mean_frequency = self.compute_sys_mean_frequency(self.Ci_frequency)
+
         # Export csv file with plotted data
-        self.gen_csv(dataset, linear_model, Ci_IPC_max_td_max, Sys_mean_productivity, Sys_mean_atd, Sys_mean_cbt, Sys_mean_IPC_td_max, Sys_mean_estimated_IPC)
+        self.gen_csv(dataset, self.linear_model, self.Ci_IPC_max_td_max,
+                     self.Sys_mean_productivity, self.Sys_mean_atd, self.Sys_mean_cbt,
+                     self.Sys_mean_frequency, self.Sys_mean_IPC_td_max, self.Sys_mean_estimated_IPC)
 
-        # Plot results
-        fig, axarr = plt.subplots(2, figsize=(8,8), sharex=True)
-        ax2 = axarr[0].twinx()
-
-        X_line = [[i] for i in range(0, 1600)] # Used to plot streched estimated line
-        axarr[0].axhline(y=100, c="yellow", linestyle='--', linewidth=2) # Plot dashed yellow line to show 100 limit
-
-        # Plot X vs Productivity on primary y axis axarr[0]
-        X = dataset['runs']['XavgTot']
-        X = X.reshape(len(X), 1)
-
-        X_lr = X.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
-
-        y = Sys_mean_productivity * 100
-        y = y.reshape(len(y), 1)
-
-        y_lr = y.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
-
-        regr = lm.LinearRegression()
-        regr.fit(X_lr, y_lr)
-
-        axarr[0].scatter(X, y, color='blue')
-        plot1 = axarr[0].plot(X_line, regr.predict(X_line), linewidth=2, label="C0 Productivity\n" +
-                                                                          "R^2: " + str(regr.score(X, y)) + "\n"
-                                                                          "MAE: " + str(mae(y, regr.predict(X))))
-
-        # Plot X vs U on primary y axis axarr[0]
-        y = dataset['runs']['UavgTot']
-        y = y.reshape(len(y), 1)
-
-        y_lr = y.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
-
-        regr = lm.LinearRegression()
-        regr.fit(X_lr, y_lr)
-
-        axarr[0].scatter(X, y, color='green')
-        plot2 = axarr[0].plot(X_line, regr.predict(X_line), linewidth=2, label="Tot Avg Utilization\n" +
-                                                                          "R^2: " + str(regr.score(X, y)) + "\n"
-                                                                          "MAE: " + str(mae(y, regr.predict(X))))
-
-        # Plot X vs Core Busy Time on primary y axis axarr[0]
-        y = Sys_mean_cbt * 100
-        y = y.reshape(len(y), 1)
-
-        plot3 = axarr[0].scatter(X, y, color='black')
-
-        # Plot X vs Avg Thread Density on primary y axis axarr[1]
-        y = Sys_mean_atd
-        y = y.reshape(len(y), 1)
-
-        plot4 = axarr[1].scatter(X, y, color='violet')
-
-        # Plot X vs R on secondary y axis ax2
-        y = dataset['runs']['RavgTot']
-        y = y.reshape(len(y), 1)
-
-        plot5 = ax2.plot(X, y, '-o', color='red', label="Tot Avg Response Time")
-
-        # Set plot title and labels
-        plt.title(sut.TEST_NAME + '\nLinear Regressions considering first ' + str(sut.NUM_SAMPLES) + ' samples')
-        axarr[1].set_xlabel('Throughput')
-        axarr[0].set_ylabel('Utilization')
-        axarr[1].set_ylabel('Tot Avg Thread Density')
-        ax2.set_ylabel('Response Time')
-
-        # Set plot legend
-        plots = plot1 + plot2 + plot5
-        labels = [p.get_label() for p in plots]
-        lgd = axarr[1].legend(plots + [plot3] + [plot4], labels + ['Tot Avg Core Busy Time (C0 state)'] + ['Tot Avg Thread Density'], scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
-
-        # Set axes limits
-        axarr[0].set_xlim(xmin=0)
-        axarr[0].set_ylim(ymin=0)
-        # axarr[0].set_ylim(ymin=0, ymax=100)
-        ax2.set_ylim(ymin=0)
-
-        # Print plot to file: png, pdf, ps, eps and svg
-        # with legend under the graph
-        plt.savefig(sut.OUTPUT_DIR + sut.TEST_NAME + '.eps', format = 'eps', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.savefig(sut.OUTPUT_DIR + sut.TEST_NAME + '.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-        plt.show()
-
+        return self # In order to chain estimate() with class constructor
 
     # For each Socket and for each Core i in Socket, calculate Ci_td2
     def compute_td2(self, dataset):
@@ -299,8 +229,8 @@ class HTLinearModel:
                 tmp_atd = tmp_atd.div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
 
                 if Ci_td2 != None:
-                    tmp_td2 = Ci_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])\
-                                                            .multiply(2)
+                    tmp_td2 = Ci_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any']) \
+                        .multiply(2)
                     tmp_atd = tmp_atd.add(tmp_td2)
 
                 result['S' + str(s) + '-C' + str(c)] = tmp_atd
@@ -336,7 +266,7 @@ class HTLinearModel:
                         tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
 
                 tmp_ref_tsc = tmp_ref_tsc.div(sut.CPU_THREADS_PER_CORE)
-                result['S' + str(s) + '-C' + str(c)]  = tmp_ref_tsc.div(sut.CPU_NOMINAL_FREQUENCY)
+                result['S' + str(s) + '-C' + str(c)] = tmp_ref_tsc.div(sut.CPU_NOMINAL_FREQUENCY)
         return result
 
     # Compute the system global mean of Ci_cbt
@@ -360,7 +290,7 @@ class HTLinearModel:
         result = {}
 
         # Compute and sort positions to be changed
-        positions = [i + 10 * times for i in range(startRun, endRun) for times in range(sut.NUM_RUNS)]
+        positions = [i + 10 * times for i in range(startRun, endRun) for times in range(sut.NUM_TESTS)]
         positions.sort()
 
         for s in range(sut.CPU_SOCKETS):
@@ -413,6 +343,47 @@ class HTLinearModel:
         result.name = "Sys_mean_estimated_IPC_TD" + str(2 if sut.CPU_HT_ACTIVE else 1)
         return result
 
+    # Compute the mean frequencies for each core
+    # frequency = (cpu_clk_unhalted_thread / cpu_clk_unhalted.ref_tsc) * CPU_NOMINAL_FREQUENCY
+    def compute_mean_frequencies(self, dataset):
+        result = {}
+
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                tmp_freq = pd.Series()
+                tmp_ref_tsc = pd.Series()
+
+                for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                    if len(tmp_freq) == 0 and len(tmp_ref_tsc) == 0:
+                        tmp_freq = tmp_freq.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
+                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                    else:
+                        tmp_freq = tmp_freq.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
+                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+
+                # Divide by number of threads per core
+                tmp_freq = tmp_freq.div(sut.CPU_THREADS_PER_CORE)
+                tmp_ref_tsc = tmp_ref_tsc.div(sut.CPU_THREADS_PER_CORE)
+
+                result['S' + str(s) + '-C' + str(c)] = tmp_freq.div(tmp_ref_tsc).multiply(sut.CPU_NOMINAL_FREQUENCY)
+
+        return result
+
+    # Compute the system global frequency mean
+    def compute_sys_mean_frequency(self, Ci_frequency):
+        result = pd.Series(name='Sys_mean_FREQ')
+        for s in range(sut.CPU_SOCKETS):
+            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+                if len(result) == 0:
+                    result = result.append(Ci_frequency['S' + str(s) + '-C' + str(c)])
+                else:
+                    result = result.add(Ci_frequency['S' + str(s) + '-C' + str(c)])
+
+        result = result / sut.CPU_PHYSICAL_CORES
+        result.name = "Sys_mean_FREQ"
+
+        return result
+
     # Generate csv file with graph data
     def gen_csv(self, dataset, linear_model, Ci_max_IPC_td_max, *args):
         df = pd.DataFrame()
@@ -437,4 +408,4 @@ class HTLinearModel:
 
                 df['S' + str(s) + '-C' + str(c) + '-REAL-IPC-TD' + str(2 if sut.CPU_HT_ACTIVE else 1)] = Ci_max_IPC_td_max['S' + str(s) + '-C' + str(c)]
 
-        df.to_csv(sut.OUTPUT_DIR + 'LRModel.csv', sep=';')
+        df.to_csv(sut.OUTPUT_DIR + '/' + self.test_name + '/LRModel.csv', sep=';')
