@@ -5,6 +5,7 @@ import sqlite3
 import sqlalchemy as sqlal
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from database import DBConstants
 from datasets.RUBBoSDataset import RUBBoSDataset
 from graph_plotters.HTModelPlotter import HTModelPlotter
@@ -21,11 +22,16 @@ import config.SUTConfig as sut
 __author__ = 'francesco'
 
 parser = argparse.ArgumentParser(description='HTperf tool: parse, aggregate, select and plot data.')
-parser.add_argument('path', metavar='path', help='path to directories containing all csv report files')
+parser.add_argument('benchmarkdirpath', metavar='benchmarkdirpath', help='path to directory containing n benchmark report directories, each one containing the csv report files')
+parser.add_argument('reportdirpath', metavar='reportdirpath', help='path to directory in which the tool generates the reports')
 args = parser.parse_args()
 
+# Get the chosen output dir and create it if necessary
+OUTPUT_DIR = os.path.join(args.reportdirpath, '')
+os.makedirs(os.path.dirname(OUTPUT_DIR), exist_ok=True)
+
 # Set path and file names
-path_to_tests = args.path
+path_to_tests = args.benchmarkdirpath
 
 test_names = [name for name in os.listdir(path_to_tests)]
 test_names.sort()
@@ -39,8 +45,7 @@ perf_file = "/perf.csv"
 
 # Create output directory
 for test in test_names:
-    os.makedirs(os.path.dirname(sut.OUTPUT_DIR + '/' + test + '/'), exist_ok=True)
-# os.makedirs(os.path.dirname(sut.OUTPUT_DIR), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_DIR + test + '/'), exist_ok=True)
 
 # Data structures
 rubbos_dataframes = {}
@@ -104,7 +109,7 @@ conn.commit()
 # c.execute("INSERT INTO prova VALUES (5,3,4)")
 
 for test in test_names:
-    rubbos_datasets[test] = RUBBoSDataset().create(rubbos_dataframes[test], conn, test)
+    rubbos_datasets[test] = RUBBoSDataset().create(rubbos_dataframes[test], conn, OUTPUT_DIR, test)
 
 # rubbos_dataset = RUBBoSDataset().create(rubbos_dataframe, conn)
 
@@ -117,7 +122,7 @@ conn.close()
 
 # ======================= STATISTICS =====================================
 for test in test_names:
-    ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], test)
+    ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], OUTPUT_DIR, test)
 
 # HTLinearModel().estimate(rubbos_dataset)
 
@@ -125,8 +130,12 @@ for test in test_names:
 #RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
 
 # ======================= PLOT GRAPHS =====================================
-plotter = HTModelPlotter().init()
+plotter = HTModelPlotter().init(OUTPUT_DIR)
 
+# cmap = plt.get_cmap('gnuplot')
+# colors = [cmap(i) for i in np.linspace(0, 1, len(test_numbers))]
+
+# for test, num, color in zip(test_names, test_numbers, colors):
 for test, num in zip(test_names, test_numbers):
     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0, 'blue', str(num) + ') C0 Productivity', True)
     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0, 'blue', str(num) + ') C0 Productivity LR', True)

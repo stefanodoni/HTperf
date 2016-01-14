@@ -1,17 +1,32 @@
 import os
 import shlex
 import subprocess
+import argparse
+import getpass
 
 __author__ = 'francesco'
 
-# Parameters
-ocperfPath = '/home/francesco/Scrivania/pmu-tools/'
-sarInterval = '5' # Get stats on a 5 seconds interval
-sarCount = '2' # Get stats 2 times. Total sar duration is sarInterval * sarCount seconds
+parser = argparse.ArgumentParser(description='LaunchCollectors tool: starts ocperf and sar tools, stops them and converts files.')
+parser.add_argument('sarinterval', metavar='sarinterval', help='sar interval parameter')
+parser.add_argument('sarcount', metavar='sarcount', help='sar count parameter')
+parser.add_argument('pmutoolsdirpath', metavar='pmutoolsdirpath', help='path to pmu-tools directory, which contains ocperf tool')
+parser.add_argument('reportdirpath', metavar='reportdirpath', help='path to directory in which the tool generates the reports')
+args = parser.parse_args()
 
-perfLog = 'perf.csv'
-sarLog = 'sar.log'
-sarCsv = 'sar-client0.csv'
+# Get the chosen output dir and create it if necessary
+OUTPUT_DIR = os.path.join(args.reportdirpath, '')
+os.makedirs(os.path.dirname(OUTPUT_DIR), exist_ok=True)
+
+pmutoolsPath = os.path.join(args.pmutoolsdirpath, '')
+
+# Parameters
+# ocperfPath = '/home/francesco/Scrivania/pmu-tools/'
+sarInterval = args.sarinterval
+sarCount = args.sarcount # Total sar duration is sarInterval * sarCount seconds
+
+perfLog = OUTPUT_DIR + 'perf.csv'
+sarLog = OUTPUT_DIR + 'sar.log'
+sarCsv = OUTPUT_DIR + 'sar-client0.csv'
 
 # Remove old files if present
 try:
@@ -23,7 +38,7 @@ except OSError:
 
 # Start ocperf and sar tools
 print('Start monitoring ... ')
-cmd = 'sudo ' + ocperfPath + 'ocperf.py stat -e instructions,cpu_clk_unhalted.thread,cpu_clk_unhalted.thread_any,cpu_clk_unhalted.ref_tsc -a -A -x ";" -o ' + perfLog + ' -I 1000'
+cmd = 'sudo ' + pmutoolsPath + 'ocperf.py stat -e instructions,cpu_clk_unhalted.thread,cpu_clk_unhalted.thread_any,cpu_clk_unhalted.ref_tsc -a -A -x ";" -o ' + perfLog + ' -I 1000'
 args = shlex.split(cmd)
 ocperfProcess = subprocess.Popen(args, stdout=subprocess.DEVNULL)
 
@@ -47,7 +62,10 @@ sarProcess = subprocess.Popen(args, stdout=sarFile)
 
 print('done!')
 
+# Get username
+username = getpass.getuser()
+
 # Change file owner
-cmd = 'sudo chown francesco ' + perfLog
+cmd = 'sudo chown ' + username + ' ' + perfLog
 args = shlex.split(cmd)
 chownProcess = subprocess.Popen(args)

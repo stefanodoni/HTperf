@@ -29,6 +29,7 @@ class HTLinearModel:
     #
     # We can then correlate the run throughput with productivity and run utilization, plotting graphs and computing R^2
 
+    output_dir = ''
     test_name = ''
 
     Ci_td1 = {}
@@ -53,7 +54,8 @@ class HTLinearModel:
     Ci_frequency = {}
     Sys_mean_frequency = pd.Series()
 
-    def estimate(self, dataset, test_name):
+    def estimate(self, dataset, output_dir, test_name):
+        self.output_dir = output_dir
         self.test_name = test_name
 
         if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
@@ -408,4 +410,4 @@ class HTLinearModel:
 
                 df['S' + str(s) + '-C' + str(c) + '-REAL-IPC-TD' + str(2 if sut.CPU_HT_ACTIVE else 1)] = Ci_max_IPC_td_max['S' + str(s) + '-C' + str(c)]
 
-        df.to_csv(sut.OUTPUT_DIR + '/' + self.test_name + '/LRModel.csv', sep=';')
+        df.to_csv(self.output_dir + self.test_name + '/LRModel.csv', sep=';')

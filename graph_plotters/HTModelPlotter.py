@@ -6,14 +6,17 @@ from sklearn import linear_model as lm
 __author__ = 'francesco'
 
 class HTModelPlotter:
+    output_dir = ''
     fig, axarr, ax2 = None, None, None
     X_line = [[i] for i in range(0, sut.MAX_THROUGHPUT)] # Used to plot streched estimated line
     plots = []
     scatters = []
     scatter_labels = []
 
-    def init(self):
-        # Plot results
+    def init(self, output_dir):
+        self.output_dir = output_dir
+
+        # Initialize plots
         self.fig, self.axarr = plt.subplots(2, figsize=(8,8), sharex=True)
         self.ax2 = self.axarr[0].twinx() # Secondary y axis in first subplot
 
@@ -107,13 +110,13 @@ class HTModelPlotter:
 
         # Set axes limits
         self.axarr[0].set_xlim(xmin=0)
-        # self.axarr[0].set_ylim(ymin=0)
-        self.axarr[0].set_ylim(ymin=0, ymax=100)
+        self.axarr[0].set_ylim(ymin=0)
+        # self.axarr[0].set_ylim(ymin=0, ymax=100)
         self.ax2.set_ylim(ymin=0)
 
         # Print plot to file: png, pdf, ps, eps and svg
         # with legend under the graph
-        plt.savefig(sut.OUTPUT_DIR + '/graph.eps', format = 'eps', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.savefig(sut.OUTPUT_DIR + '/graph.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(self.output_dir + 'graph.eps', format = 'eps', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(self.output_dir + 'graph.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
 
         plt.show()

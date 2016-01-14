@@ -38,7 +38,7 @@ CPU_LOGICAL_CORES = CPU_PHYSICAL_CORES * CPU_THREADS_PER_CORE
 # Benchmark Results Analysis Settings
 # TEST_NAME = 'RUBBoS-20151210-test-2600-HT1-GPOW-TB0-F1200'
 # OUTPUT_DIR = '/home/francesco/Scrivania/' + TEST_NAME + '/'
-OUTPUT_DIR = '/home/francesco/Scrivania/HTReports'
+# OUTPUT_DIR = '/home/francesco/Scrivania/HTReports'
 
 # Test parameters (used for Linear Regression and others)
 NUM_SAMPLES = 4 # Number of the first runs to use in the Linear Regression (e.g. first 4 over 10)
@@ -47,11 +47,12 @@ NUM_TESTS = 1 # Number of test repetitions, usually 10 (i.e. number of growing l
 
 # Values to plot streched line
 # MAX_THROUGHPUT = 700 # Rubbos 2000 load
-# MAX_THROUGHPUT = 900 # Rubbos 2600 load
-# MAX_THROUGHPUT = 1200 # Rubbos 3400 load
-MAX_THROUGHPUT = 1500 # Rubbos 4400 load
+# MAX_THROUGHPUT = 1100 # Rubbos 2900 load
+# MAX_THROUGHPUT = 1400 # Rubbos 3800 load
+# MAX_THROUGHPUT = 1500 # Rubbos 4400 load
 # MAX_THROUGHPUT = 1600 # Rubbos 5500 load
 # MAX_THROUGHPUT = 1800 # Rubbos 5500 load higher throughput
+MAX_THROUGHPUT = 12 # CBench Throughput
 
 # Runs to be considered in computing real IPC
 START_RUN = 9
