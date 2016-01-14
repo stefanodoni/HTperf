@@ -7,8 +7,8 @@ import getpass
 __author__ = 'francesco'
 
 parser = argparse.ArgumentParser(description='LaunchCollectors tool: starts ocperf and sar tools, stops them and converts files.')
-parser.add_argument('sarinterval', metavar='sarinterval', help='sar interval parameter')
-parser.add_argument('sarcount', metavar='sarcount', help='sar count parameter')
+parser.add_argument('interval', metavar='interval', help='sampling interval')
+parser.add_argument('count', metavar='count', help='sampling count')
 parser.add_argument('pmutoolsdirpath', metavar='pmutoolsdirpath', help='path to pmu-tools directory, which contains ocperf tool')
 parser.add_argument('reportdirpath', metavar='reportdirpath', help='path to directory in which the tool generates the reports')
 args = parser.parse_args()
@@ -21,8 +21,8 @@ pmutoolsPath = os.path.join(args.pmutoolsdirpath, '')
 
 # Parameters
 # ocperfPath = '/home/francesco/Scrivania/pmu-tools/'
-sarInterval = args.sarinterval
-sarCount = args.sarcount # Total sar duration is sarInterval * sarCount seconds
+interval = args.interval
+count = args.count # Total sar duration is sarInterval * sarCount seconds
 
 perfLog = OUTPUT_DIR + 'perf.csv'
 sarLog = OUTPUT_DIR + 'sar.log'
@@ -38,16 +38,21 @@ except OSError:
 
 # Start ocperf and sar tools
 print('Start monitoring ... ')
-cmd = 'sudo ' + pmutoolsPath + 'ocperf.py stat -e instructions,cpu_clk_unhalted.thread,cpu_clk_unhalted.thread_any,cpu_clk_unhalted.ref_tsc -a -A -x ";" -o ' + perfLog + ' -I 1000'
+cmd = 'sudo ' + pmutoolsPath + 'ocperf.py stat -e instructions,cpu_clk_unhalted.thread,cpu_clk_unhalted.thread_any,cpu_clk_unhalted.ref_tsc -a -A -x ";" -o ' + perfLog \
++ ' -I ' + str(int(interval)*1000) \
++ ' sleep ' + str(int(count)*int(interval))
+
 args = shlex.split(cmd)
 ocperfProcess = subprocess.Popen(args, stdout=subprocess.DEVNULL)
 
-cmd = 'sar -u ' + sarInterval + ' ' + sarCount + ' -o ' + sarLog
+cmd = 'sar -u ' + interval + ' ' + count + ' -o ' + sarLog
 args = shlex.split(cmd)
 sarProcess = subprocess.Popen(args, stdout=subprocess.DEVNULL)
 
-if sarProcess.wait() == 0: # Wait for sar to finish, then kill ocperf and perf processes
-    os.system("sudo killall perf")
+sarProcess.wait()
+#if sarProcess.wait() == 0: # Wait for sar to finish, then kill ocperf and perf processes
+#	finish=1
+#    os.system("sudo killall perf")
 
 print("Finished monitoring!")
 
