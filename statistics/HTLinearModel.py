@@ -11,15 +11,15 @@ class HTLinearModel:
     # Estimate multivariate linear regression model for each physical CPU and compute CPU productivity.
     # Parameters:
     #   - Ci_instr: sum of CPUi_(thread i) instructons, where i belongs to physical CPU Ci
-    #   - Ci_td2 = sum of CPUi_cpu_clk_unhalted_thread - CPUi_cpu_clk_unhalted_thread_any, where i belongs to physical CPU Ci => clock cycles with Thread Density 2
-    #   - Ci_td1: CPUi_cpu_clk_unhalted_thread_any - Ci_td2 => clock cycles with Thread Density 1
+    #   - Ci_unhalted_clk_td2 = sum of CPUi_cpu_clk_unhalted_thread - CPUi_cpu_clk_unhalted_thread_any, where i belongs to physical CPU Ci => clock cycles with Thread Density 2
+    #   - Ci_unhalted_clk_td1: CPUi_cpu_clk_unhalted_thread_any - Ci_unhalted_clk_td2 => clock cycles with Thread Density 1
     #
     # Unknowns (Multivariate Linear Regression coefficients):
     #   - IPC_td1
     #   - IPC_td2 (= IPC_td1 * S, with S = Speedup w.r.t. IPC_td1)
     #
     # Equation:
-    #   Ci_instr = IPC_td1 * Ci_td1 + IPC_td2 * Ci_td2
+    #   Ci_instr = IPC_td1 * Ci_unhalted_clk_td1 + IPC_td2 * Ci_unhalted_clk_td2
     #
     # To compute CPU productivity we need the max number of instructions with td2.
     #   - Ci_instr_max = Nominal CPU Frequency * IPC_td2
@@ -32,8 +32,8 @@ class HTLinearModel:
     output_dir = ''
     test_name = ''
 
-    Ci_td1 = {}
-    Ci_td2 = {}
+    Ci_unhalted_clk_td1 = {}
+    Ci_unhalted_clk_td2 = {}
     Ci_instr = {}
 
     linear_model = {}
@@ -59,19 +59,19 @@ class HTLinearModel:
         self.test_name = test_name
 
         if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
-            self.Ci_td1 = self.compute_td1(dataset)
+            self.Ci_unhalted_clk_td1 = self.compute_td1(dataset)
             self.Ci_instr = self.compute_instr(dataset)
 
-            self.linear_model = self.estimate_IPCs(self.Ci_td1, self.Ci_instr)
+            self.linear_model = self.estimate_IPCs(self.Ci_unhalted_clk_td1, self.Ci_instr)
         else : # Hyperthreading ON
-            self.Ci_td2 = self.compute_td2(dataset)
-            self.Ci_td1 = self.compute_td1(dataset, self.Ci_td2)
+            self.Ci_unhalted_clk_td2 = self.compute_td2(dataset)
+            self.Ci_unhalted_clk_td1 = self.compute_td1(dataset, self.Ci_unhalted_clk_td2)
             self.Ci_instr = self.compute_instr(dataset)
 
-            self.linear_model = self.estimate_IPCs(self.Ci_td1, self.Ci_instr, self.Ci_td2)
+            self.linear_model = self.estimate_IPCs(self.Ci_unhalted_clk_td1, self.Ci_instr, self.Ci_unhalted_clk_td2)
 
-        # print(Ci_td2['S0-C0'])
-        # print(Ci_td2)
+        # print(Ci_unhalted_clk_td2['S0-C0'])
+        # print(Ci_unhalted_clk_td2)
         # print(Ci_instr['S0-C0'])
 
         self.Ci_instr_max = self.compute_instr_max(self.linear_model)
@@ -92,9 +92,9 @@ class HTLinearModel:
         # print(Sys_mean_estimated_IPC)
 
         if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
-            self.Ci_atd = self.compute_atd(dataset, self.Ci_td1)
+            self.Ci_atd = self.compute_atd(dataset, self.Ci_unhalted_clk_td1)
         else : # Hyperthreading ON
-            self.Ci_atd = self.compute_atd(dataset, self.Ci_td1, self.Ci_td2)
+            self.Ci_atd = self.compute_atd(dataset, self.Ci_unhalted_clk_td1, self.Ci_unhalted_clk_td2)
 
         self.Sys_mean_atd = self.compute_sys_mean_atd(self.Ci_atd)
 
@@ -117,7 +117,7 @@ class HTLinearModel:
 
         return self # In order to chain estimate() with class constructor
 
-    # For each Socket and for each Core i in Socket, calculate Ci_td2
+    # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td2
     def compute_td2(self, dataset):
         result = {}
         for s in range(sut.CPU_SOCKETS):
@@ -130,21 +130,21 @@ class HTLinearModel:
                     else:
                         tmp_td2 = tmp_td2.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
 
-                # Calculate Ci_td2 using unhalted clocks of the first logical core of cpu c
+                # Calculate Ci_unhalted_clk_td2 using unhalted clocks of the first logical core of cpu c
                 result['S' + str(s) + '-C' + str(c)]  = tmp_td2.sub(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
         return result
 
-    # For each Socket and for each Core i in Socket, calculate Ci_td1
-    def compute_td1(self, dataset, Ci_td2=None):
+    # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td1
+    def compute_td1(self, dataset, Ci_unhalted_clk_td2=None):
         result = {}
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
                 tmp_td1 = dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'].copy()
 
-                if Ci_td2 == None:
+                if Ci_unhalted_clk_td2 == None:
                     result['S' + str(s) + '-C' + str(c)] = tmp_td1
                 else:
-                    result['S' + str(s) + '-C' + str(c)] = tmp_td1.sub(Ci_td2['S' + str(s) + '-C' + str(c)])
+                    result['S' + str(s) + '-C' + str(c)] = tmp_td1.sub(Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)])
         return result
 
     # For each Socket and for each Core i in Socket, calculate Ci_instr
@@ -164,7 +164,7 @@ class HTLinearModel:
         return result
 
     # For each Socket and for each Core i in Socket, compute IPC_td1 and IPC_td2 with Multivariate Linear Regression
-    def estimate_IPCs(self, Ci_td1, Ci_instr, Ci_td2=None):
+    def estimate_IPCs(self, Ci_unhalted_clk_td1, Ci_instr, Ci_unhalted_clk_td2=None):
         result = {}
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
@@ -172,11 +172,11 @@ class HTLinearModel:
                 y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)])
                 y = y.reshape(len(y), 1)
 
-                if Ci_td2 == None:
-                    X = [[i] for i in Ci_td1['S' + str(s) + '-C' + str(c)]]
+                if Ci_unhalted_clk_td2 == None:
+                    X = [[i] for i in Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)]]
                 else:
-                    # X = two elems per row [Ci_td1, Ci_td2]
-                    X = [[i, j] for i, j in zip(Ci_td1['S' + str(s) + '-C' + str(c)], Ci_td2['S' + str(s) + '-C' + str(c)])]
+                    # X = two elems per row [Ci_unhalted_clk_td1, Ci_unhalted_clk_td2]
+                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)], Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)])]
 
                 regr = lm.LinearRegression(fit_intercept=False) # fit_intercept=False is equivalent to "+ 0" in R
                 regr.fit(X, y)
@@ -221,17 +221,17 @@ class HTLinearModel:
         return result
 
     # Compute Average Thread Density
-    # Ci_atd = Ci_td1 / cpu_clk_unhalted_thread_any + 2 * Ci_td2 / cpu_clk_unhalted_thread_any
-    def compute_atd(self, dataset, Ci_td1, Ci_td2=None):
+    # Ci_atd = Ci_unhalted_clk_td1 / cpu_clk_unhalted_thread_any + 2 * Ci_unhalted_clk_td2 / cpu_clk_unhalted_thread_any
+    def compute_atd(self, dataset, Ci_unhalted_clk_td1, Ci_unhalted_clk_td2=None):
         result = {}
         for s in range(sut.CPU_SOCKETS):
             for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
-                tmp_atd = Ci_td1['S' + str(s) + '-C' + str(c)].copy()
+                tmp_atd = Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)].copy()
                 # Calculate using unhalted clocks of the first logical core of cpu c
                 tmp_atd = tmp_atd.div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
 
-                if Ci_td2 != None:
-                    tmp_td2 = Ci_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any']) \
+                if Ci_unhalted_clk_td2 != None:
+                    tmp_td2 = Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any']) \
                         .multiply(2)
                     tmp_atd = tmp_atd.add(tmp_td2)
 
