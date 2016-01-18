@@ -24,7 +24,11 @@ __author__ = 'francesco'
 parser = argparse.ArgumentParser(description='HTperf tool: parse, aggregate, select and plot data.')
 parser.add_argument('benchmarkdirpath', metavar='benchmarkdirpath', help='path to directory containing n benchmark report directories, each one containing the csv report files')
 parser.add_argument('reportdirpath', metavar='reportdirpath', help='path to directory in which the tool generates the reports')
+parser.add_argument('-pcm', help='indicates if a pcm.csv file must be parsed', dest='pcm', action='store_true')
 args = parser.parse_args()
+
+# Settings
+using_pcm = args.pcm
 
 # Get the chosen output dir and create it if necessary
 OUTPUT_DIR = os.path.join(args.reportdirpath, '')
@@ -61,8 +65,10 @@ ht_linear_models = {}
 for test in test_names:
     rubbos_dataframes[test] = RUBBoSParser().parse(path_to_tests + '/' + test + rubbos_file)
     sar_dataframes[test] = SarParser().parse(path_to_tests + '/' + test + sar_file)
-    pcm_dataframes[test] = PCMParser().parse(path_to_tests + '/' + test + pcm_file)
     perf_dataframes[test] = PerfParser().parse(path_to_tests + '/' + test + perf_file)
+
+    if using_pcm:
+        pcm_dataframes[test] = PCMParser().parse(path_to_tests + '/' + test + pcm_file)
 
 # rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed") # Only if using the detailed version of rubbos report file
 # rubbos_dataframe = RUBBoSParser().parse(directory + rubbos_file)
@@ -78,8 +84,10 @@ c = conn.cursor()
 for test in test_names:
     rubbos_dataframes[test].to_sql(DBConstants.RUBBOS_TABLE, conn, if_exists='append')
     sar_dataframes[test].to_sql(DBConstants.SAR_TABLE, conn, if_exists='append')
-    pcm_dataframes[test].to_sql(DBConstants.PCM_TABLE, conn, if_exists='append')
     perf_dataframes[test].to_sql(DBConstants.PERF_TABLE, conn, if_exists='append')
+
+    if using_pcm:
+        pcm_dataframes[test].to_sql(DBConstants.PCM_TABLE, conn, if_exists='append')
 
 #rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
 # rubbos_dataframe.to_sql(DBConstants.RUBBOS_TABLE, conn)
@@ -109,7 +117,7 @@ conn.commit()
 # c.execute("INSERT INTO prova VALUES (5,3,4)")
 
 for test in test_names:
-    rubbos_datasets[test] = RUBBoSDataset().create(rubbos_dataframes[test], conn, OUTPUT_DIR, test)
+    rubbos_datasets[test] = RUBBoSDataset().create(rubbos_dataframes[test], conn, OUTPUT_DIR, test, using_pcm)
 
 # rubbos_dataset = RUBBoSDataset().create(rubbos_dataframe, conn)
 

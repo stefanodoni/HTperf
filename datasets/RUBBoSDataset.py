@@ -7,7 +7,7 @@ import config.SUTConfig as sut
 __author__ = 'francesco'
 
 class RUBBoSDataset (HTDataset):
-    def create(self, dataframe, DBconn, output_dir, test_name):
+    def create(self, dataframe, DBconn, output_dir, test_name, using_pcm):
 
         # The returned dataset is a dictionary that contains the following fields:
         #   - runs: Pandas DataFrame, contains the RUBBoS report of each run
@@ -17,17 +17,19 @@ class RUBBoSDataset (HTDataset):
         mydataset['runs'] = dataframe.copy()
 
         # Extract and aggregate PCM data and Perf data for each run
-        mydataset['pcm-stats'] = StatsGenerator().extract(DBConstants.PCM_TABLE, DBconn,
-                                                          dataframe[Parser.TIMESTAMP_START_STR],
-                                                          dataframe[Parser.TIMESTAMP_END_STR])
+        if using_pcm:
+            mydataset['pcm-stats'] = StatsGenerator().extract(DBConstants.PCM_TABLE, DBconn,
+                                                            dataframe[Parser.TIMESTAMP_START_STR],
+                                                            dataframe[Parser.TIMESTAMP_END_STR])
 
 
         mydataset['perf-stats'] = StatsGenerator().extract(DBConstants.PERF_TABLE, DBconn,
                                                            dataframe[Parser.TIMESTAMP_START_STR],
                                                            dataframe[Parser.TIMESTAMP_END_STR])
         # Print csv reports
-        for i in mydataset['pcm-stats']:
-            mydataset['pcm-stats'][i].to_csv(output_dir + test_name + '/pcm-' + i + '.csv', sep=';')
+        if using_pcm:
+            for i in mydataset['pcm-stats']:
+                mydataset['pcm-stats'][i].to_csv(output_dir + test_name + '/pcm-' + i + '.csv', sep=';')
 
         for i in mydataset['perf-stats']:
             mydataset['perf-stats'][i].to_csv(output_dir + test_name + '/perf-' + i + '.csv', sep=';')
