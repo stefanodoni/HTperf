@@ -25,6 +25,11 @@ class RUBBoSDataset (HTDataset):
 
         mydataset['perf-stats'] = StatsGenerator().extract(DBConstants.PERF_TABLE, DBconn,
                                                            dataframe[Parser.TIMESTAMP_START_STR],
+                                                           dataframe[Parser.TIMESTAMP_END_STR],
+                                                           True)
+
+        mydataset['sar-stats'] = StatsGenerator().extract(DBConstants.SAR_TABLE, DBconn,
+                                                           dataframe[Parser.TIMESTAMP_START_STR],
                                                            dataframe[Parser.TIMESTAMP_END_STR])
         # Print csv reports
         if using_pcm:
@@ -33,5 +38,8 @@ class RUBBoSDataset (HTDataset):
 
         for i in mydataset['perf-stats']:
             mydataset['perf-stats'][i].to_csv(output_dir + test_name + '/perf-' + i + '.csv', sep=';')
+
+        for i in mydataset['sar-stats']:
+            mydataset['sar-stats'][i].to_csv(output_dir + test_name + '/sar-' + i + '.csv', sep=';')
 
         return mydataset

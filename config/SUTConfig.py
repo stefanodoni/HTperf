@@ -53,8 +53,9 @@ NUM_TESTS = 1 # Number of test repetitions, usually 10 (i.e. number of growing l
 # MAX_THROUGHPUT = 1600 # Rubbos 5500 load
 # MAX_THROUGHPUT = 1800 # Rubbos 5500 load higher throughput
 # MAX_THROUGHPUT = 150 # CBench Throughput 10ms
-MAX_THROUGHPUT = 400 # CBench Throughput 1ms
+# MAX_THROUGHPUT = 400 # CBench Throughput 1ms
+MAX_THROUGHPUT = 160000 # SPECpower Throughput
 
 # Runs to be considered in computing real IPC
-START_RUN = 9
+START_RUN = 1
 END_RUN = 10

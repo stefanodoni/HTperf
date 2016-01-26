@@ -109,7 +109,7 @@ class HTModelPlotter:
         lgd = self.axarr[1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
 
         # Set axes limits
-        self.axarr[0].set_xlim(xmin=0)
+        self.axarr[0].set_xlim(xmin=0, xmax=sut.MAX_THROUGHPUT)
         self.axarr[0].set_ylim(ymin=0)
         # self.axarr[0].set_ylim(ymin=0, ymax=100)
         self.ax2.set_ylim(ymin=0)

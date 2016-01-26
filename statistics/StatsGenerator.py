@@ -5,7 +5,8 @@ import numpy as np
 __author__ = 'francesco'
 
 class StatsGenerator:
-    def extract(self, table, DBconn, startTS, endTS):
+    # The normalize_perf parameter is needed to correctly compute the number of perf metrics accordingly to the measurement interval
+    def extract(self, table, DBconn, startTS, endTS, normalize_perf=False):
         mydf = pd.DataFrame(startTS)
         mydf.loc[:, endTS.name] = endTS # Add new column
 
@@ -25,6 +26,16 @@ class StatsGenerator:
         df.drop(['index', Parser.TIMESTAMP_STR], axis=1, inplace=True)
         mycolumns = df.columns
 
+        # Compute the measurement interval
+        if normalize_perf:
+            df = pd.read_sql_query("SELECT * "
+                              "FROM " + table + " "
+                              "LIMIT 2", DBconn)
+            firstTs = pd.datetime.strptime(df[Parser.TIMESTAMP_STR][0], '%Y-%m-%d %H:%M:%S.%f')
+            secondTs = pd.datetime.strptime(df[Parser.TIMESTAMP_STR][1], '%Y-%m-%d %H:%M:%S.%f')
+            interval = int((secondTs - firstTs).seconds)
+
+
         # Empty DataFrame just to have columns names
         tmp_mean = pd.DataFrame(columns=mycolumns)
         tmp_std = pd.DataFrame(columns=mycolumns)
@@ -41,6 +52,10 @@ class StatsGenerator:
 
             # Replace negative values with NaN, for statistical purpose
             df[df < 0] = np.nan
+
+            # Divide all values by the perf measurement interval
+            if normalize_perf:
+                df = df.div(interval)
 
             # Calculate mean of columns
             mean = df.mean().reset_index().T

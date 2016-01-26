@@ -50,6 +50,7 @@ class HTLinearModel:
 
     Ci_cbt = {}
     Sys_mean_cbt = {}
+    Sys_mean_utilization = pd.Series()
 
     Ci_frequency = {}
     Sys_mean_frequency = pd.Series()
@@ -72,16 +73,16 @@ class HTLinearModel:
 
         # print(Ci_unhalted_clk_td2['S0-C0'])
         # print(Ci_unhalted_clk_td2)
-        # print(Ci_instr['S0-C0'])
+        # print(self.Ci_instr['S0-C0'])
 
         self.Ci_instr_max = self.compute_instr_max(self.linear_model)
         self.Ci_productivity = self.compute_productivity(self.Ci_instr, self.Ci_instr_max)
         self.Sys_mean_productivity = self.compute_sys_mean_productivity(self.Ci_productivity)
 
-        # print(linear_model['S0-C0'])
-        # print(Ci_instr_max['S0-C0'])
-        # print(Ci_productivity)
-        # print(Sys_mean_productivity)
+        # print(self.linear_model['S0-C0'])
+        # print(self.Ci_instr_max['S0-C0'])
+        # print(self.Ci_productivity)
+        # print(self.Sys_mean_productivity)
 
         self.Ci_IPC_max_td_max = self.compute_IPC_at_run_with_td_max(dataset, sut.START_RUN, sut.END_RUN)
         self.Sys_mean_IPC_td_max = self.compute_sys_mean_IPC_at_td_max(self.Ci_IPC_max_td_max)
@@ -103,16 +104,19 @@ class HTLinearModel:
 
         self.Ci_cbt = self.compute_core_busy_time(dataset)
         self.Sys_mean_cbt = self.compute_sys_mean_core_busy_time(self.Ci_cbt)
+        self.Sys_mean_utilization = self.compute_sys_mean_utilization(dataset)
 
         # print(Ci_cbt)
-        # print(Sys_mean_cbt)
+        # print(self.Sys_mean_cbt)
+        # print(self.Sys_mean_utilization)
 
         self.Ci_frequency = self.compute_mean_frequencies(dataset)
         self.Sys_mean_frequency = self.compute_sys_mean_frequency(self.Ci_frequency)
 
         # Export csv file with plotted data
         self.gen_csv(dataset, self.linear_model, self.Ci_IPC_max_td_max,
-                     self.Sys_mean_productivity, self.Sys_mean_atd, self.Sys_mean_cbt,
+                     self.Ci_instr, self.Ci_instr_max,
+                     self.Sys_mean_productivity, self.Sys_mean_atd, self.Sys_mean_cbt, self.Sys_mean_utilization,
                      self.Sys_mean_frequency, self.Sys_mean_IPC_td_max, self.Sys_mean_estimated_IPC)
 
         return self # In order to chain estimate() with class constructor
@@ -285,6 +289,16 @@ class HTLinearModel:
         result.name = "Sys_mean_cbt"
         return result
 
+    def compute_sys_mean_utilization(self, dataset):
+        result = pd.Series(name='Sys_mean_utilization')
+
+        result = result.append(dataset['sar-stats']['mean']['User'])
+        result = result.add(dataset['sar-stats']['mean']['Nice'])
+        result = result.add(dataset['sar-stats']['mean']['System'])
+
+        result.name = "Sys_mean_utilization"
+        return result
+
     # For each Socket and for each Core i in Socket, calculate real IPC at TD depending on the specified run
     def compute_IPC_at_run_with_td_max(self, dataset, startRun, endRun):
         startRun = startRun - 1
@@ -387,7 +401,7 @@ class HTLinearModel:
         return result
 
     # Generate csv file with graph data
-    def gen_csv(self, dataset, linear_model, Ci_max_IPC_td_max, *args):
+    def gen_csv(self, dataset, linear_model, Ci_max_IPC_td_max, Ci_instr, Ci_instr_max, *args):
         df = pd.DataFrame()
         df = df.append(dataset['runs']['TotClients'])
         df = df.append(dataset['runs']['XavgTot'])
@@ -409,5 +423,10 @@ class HTLinearModel:
                     df['S' + str(s) + '-C' + str(c) + '-EST-IPC-TD2'] = linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][1]
 
                 df['S' + str(s) + '-C' + str(c) + '-REAL-IPC-TD' + str(2 if sut.CPU_HT_ACTIVE else 1)] = Ci_max_IPC_td_max['S' + str(s) + '-C' + str(c)]
+
+        # for s in range(sut.CPU_SOCKETS):
+        #     for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        #         df['S' + str(s) + '-C' + str(c) + '-INSTRUCTIONS'] = Ci_instr['S' + str(s) + '-C' + str(c)]
+        #         df['S' + str(s) + '-C' + str(c) + '-MAX-INSTRUCTIONS'] = Ci_instr_max['S' + str(s) + '-C' + str(c)]
 
         df.to_csv(self.output_dir + self.test_name + '/LRModel.csv', sep=';')
