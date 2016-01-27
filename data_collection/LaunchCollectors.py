@@ -27,14 +27,41 @@ count = args.count # Total sar duration is sarInterval * sarCount seconds
 perfLog = OUTPUT_DIR + 'perf.csv'
 sarLog = OUTPUT_DIR + 'sar.log'
 sarCsv = OUTPUT_DIR + 'sar-client0.csv'
+sysCsv = OUTPUT_DIR + 'sysConfig.csv'
 
 # Remove old files if present
 try:
     os.remove(perfLog)
     os.remove(sarLog)
     os.remove(sarCsv)
+    os.remove(sysCsv)
 except OSError:
     pass
+
+# Collect system informations
+print('Collecting system configuration ... ', end="")
+sysFile = open(sysCsv, 'w')
+subprocess.call('echo "ModelName;`lscpu | grep -oP "Model name: +\K(.+)"`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "Model;`lscpu | grep -oP "Model: +\K([0-9]+)"`;"', stdout=sysFile, shell=True)
+
+subprocess.call('echo "Sockets;`lscpu | grep -oP "Socket\(s\):.+\K([0-9]+)"`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "CoresPerSocket;`lscpu | grep -oP "Core\(s\) per socket.+\K([0-9]+)"`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "ThreadsPerCore;`lscpu | grep -oP "Thread\(s\) per core.+\K([0-9]+)"`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "Siblings;`cat /sys/devices/system/cpu/cpu*/topology/thread_siblings_list | sort | uniq | sed "s/,/-/" | tr "\n" " "`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "OnlineCPUs;`lscpu | grep -oP "CPU\(s\):.+\K([0-9]+)" | head -1`;"', stdout=sysFile, shell=True)
+
+subprocess.call('echo "BaseFrequency;`lscpu | grep -oP "Model name:.+\K([0-9]+\.[0-9]+)"`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "BaseOperatingRatio;`sudo rdmsr 0xce -f 15:8 -d`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "CPUMaxMHz;`lscpu | grep -oP "CPU max MHz:.+ \K([0-9]+,[0-9]+)" | sed "s/,/\./"`;"', stdout=sysFile, shell=True)
+
+subprocess.call('echo "TurboBoost;`cat /sys/devices/system/cpu/intel_pstate/no_turbo`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "TurboRatioLimit1Core;`sudo rdmsr 0x1ad -f 7:0 -d`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "TurboRatioLimit2Cores;`sudo rdmsr 0x1ad -f 15:8 -d`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "TurboRatioLimit3Cores;`sudo rdmsr 0x1ad -f 23:16 -d`;"', stdout=sysFile, shell=True)
+subprocess.call('echo "TurboRatioLimit4Cores;`sudo rdmsr 0x1ad -f 31:24 -d`;"', stdout=sysFile, shell=True)
+
+subprocess.call('echo "Governor;`cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`;"', stdout=sysFile, shell=True)
+print('done!')
 
 # Start ocperf and sar tools
 print('Start monitoring ... ')

@@ -1,6 +1,6 @@
 from sklearn.metrics import mean_absolute_error as mae
 import matplotlib.pyplot as plt
-import config.SUTConfig as sut
+import config.BenchmarkAnalysisConfig as bac
 from sklearn import linear_model as lm
 
 __author__ = 'francesco'
@@ -8,7 +8,7 @@ __author__ = 'francesco'
 class HTModelPlotter:
     output_dir = ''
     fig, axarr, ax2 = None, None, None
-    X_line = [[i] for i in range(0, sut.MAX_THROUGHPUT)] # Used to plot streched estimated line
+    X_line = [[i] for i in range(0, bac.MAX_THROUGHPUT)] # Used to plot streched estimated line
     plots = []
     scatters = []
     scatter_labels = []
@@ -27,7 +27,7 @@ class HTModelPlotter:
     # Plot Linear Regression of X_dataset vs [percentual] y_dataset on given X_axis and y_axis
     def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False):
         X = X_dataset.reshape(len(X_dataset), 1)
-        X_lr = X.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
+        X_lr = X.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
         if percentual:
             y = y_dataset * 100
@@ -35,7 +35,7 @@ class HTModelPlotter:
             y = y_dataset
 
         y = y.reshape(len(y), 1)
-        y_lr = y.reshape(-1, sut.NUM_RUNS)[:,:sut.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
+        y_lr = y.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
         regr = lm.LinearRegression()
         regr.fit(X_lr, y_lr)
@@ -109,7 +109,7 @@ class HTModelPlotter:
         lgd = self.axarr[1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
 
         # Set axes limits
-        self.axarr[0].set_xlim(xmin=0, xmax=sut.MAX_THROUGHPUT)
+        self.axarr[0].set_xlim(xmin=0, xmax=bac.MAX_THROUGHPUT)
         self.axarr[0].set_ylim(ymin=0)
         # self.axarr[0].set_ylim(ymin=0, ymax=100)
         self.ax2.set_ylim(ymin=0)

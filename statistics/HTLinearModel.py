@@ -1,9 +1,7 @@
 from sklearn import linear_model as lm
-from sklearn.metrics import mean_absolute_error as mae
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
-import config.SUTConfig as sut
+import config.BenchmarkAnalysisConfig as bac
 
 __author__ = 'francesco'
 
@@ -31,6 +29,7 @@ class HTLinearModel:
 
     output_dir = ''
     test_name = ''
+    my_sut_config = None
 
     Ci_unhalted_clk_td1 = {}
     Ci_unhalted_clk_td2 = {}
@@ -55,11 +54,12 @@ class HTLinearModel:
     Ci_frequency = {}
     Sys_mean_frequency = pd.Series()
 
-    def estimate(self, dataset, output_dir, test_name):
+    def estimate(self, dataset, output_dir, test_name, my_sut_config):
         self.output_dir = output_dir
         self.test_name = test_name
+        self.my_sut_config = my_sut_config
 
-        if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
+        if not self.my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
             self.Ci_unhalted_clk_td1 = self.compute_td1(dataset)
             self.Ci_instr = self.compute_instr(dataset)
 
@@ -84,7 +84,7 @@ class HTLinearModel:
         # print(self.Ci_productivity)
         # print(self.Sys_mean_productivity)
 
-        self.Ci_IPC_max_td_max = self.compute_IPC_at_run_with_td_max(dataset, sut.START_RUN, sut.END_RUN)
+        self.Ci_IPC_max_td_max = self.compute_IPC_at_run_with_td_max(dataset, bac.START_RUN, bac.END_RUN)
         self.Sys_mean_IPC_td_max = self.compute_sys_mean_IPC_at_td_max(self.Ci_IPC_max_td_max)
         self.Sys_mean_estimated_IPC = self.compute_sys_mean_estimated_IPC(self.linear_model)
 
@@ -92,7 +92,7 @@ class HTLinearModel:
         # print(Sys_max_IPC_td_max)
         # print(Sys_mean_estimated_IPC)
 
-        if not sut.CPU_HT_ACTIVE: # Hyperthreading OFF
+        if not self.my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
             self.Ci_atd = self.compute_atd(dataset, self.Ci_unhalted_clk_td1)
         else : # Hyperthreading ON
             self.Ci_atd = self.compute_atd(dataset, self.Ci_unhalted_clk_td1, self.Ci_unhalted_clk_td2)
@@ -124,26 +124,26 @@ class HTLinearModel:
     # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td2
     def compute_td2(self, dataset):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 tmp_td2 = pd.Series()
 
-                for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_td2) == 0:
                         tmp_td2 = tmp_td2.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
                     else:
                         tmp_td2 = tmp_td2.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
 
                 # Calculate Ci_unhalted_clk_td2 using unhalted clocks of the first logical core of cpu c
-                result['S' + str(s) + '-C' + str(c)]  = tmp_td2.sub(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
+                result['S' + str(s) + '-C' + str(c)]  = tmp_td2.sub(dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
         return result
 
     # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td1
     def compute_td1(self, dataset, Ci_unhalted_clk_td2=None):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
-                tmp_td1 = dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'].copy()
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
+                tmp_td1 = dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'].copy()
 
                 if Ci_unhalted_clk_td2 == None:
                     result['S' + str(s) + '-C' + str(c)] = tmp_td1
@@ -154,11 +154,11 @@ class HTLinearModel:
     # For each Socket and for each Core i in Socket, calculate Ci_instr
     def compute_instr(self, dataset):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 tmp_instr = pd.Series()
 
-                for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_instr) == 0:
                         tmp_instr = tmp_instr.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'])
                     else:
@@ -170,8 +170,8 @@ class HTLinearModel:
     # For each Socket and for each Core i in Socket, compute IPC_td1 and IPC_td2 with Multivariate Linear Regression
     def estimate_IPCs(self, Ci_unhalted_clk_td1, Ci_instr, Ci_unhalted_clk_td2=None):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 # y = one element per row [Ci_istr]
                 y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)])
                 y = y.reshape(len(y), 1)
@@ -192,10 +192,10 @@ class HTLinearModel:
     # For each Socket and for each Core i in Socket, compute Ci_instr_max at td1 and td2
     def compute_instr_max(self, linear_model):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
-                # result['S' + str(s) + '-C' + str(c)] = sut.CPU_NOMINAL_FREQUENCY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
-                result['S' + str(s) + '-C' + str(c)] = sut.CPU_ACTUAL_MAX_FREQUENCY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
+                # result['S' + str(s) + '-C' + str(c)] = self.my_sut_config.CPU_NOMINAL_FREQUENCY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
+                result['S' + str(s) + '-C' + str(c)] = self.my_sut_config.CPU_MAX_FREQUENCY_ALL_CORES_BUSY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
 
         return result
 
@@ -204,23 +204,23 @@ class HTLinearModel:
     # If Hyperthreading OFF, compute Productivity w.r.t. td1
     def compute_productivity(self, Ci_instr, Ci_instr_max):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
-                result['S' + str(s) + '-C' + str(c)] = Ci_instr['S' + str(s) + '-C' + str(c)] / Ci_instr_max['S' + str(s) + '-C' + str(c)][0][sut.CPU_HT_ACTIVE]
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
+                result['S' + str(s) + '-C' + str(c)] = Ci_instr['S' + str(s) + '-C' + str(c)] / Ci_instr_max['S' + str(s) + '-C' + str(c)][0][self.my_sut_config.CPU_HT_ACTIVE]
 
         return result
 
     # Compute the system global mean of Ci_productivity
     def compute_sys_mean_productivity(self, Ci_productivity):
         result = pd.Series(name='Sys_mean_productivity')
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
                     result = result.append(Ci_productivity['S' + str(s) + '-C' + str(c)])
                 else:
                     result = result.add(Ci_productivity['S' + str(s) + '-C' + str(c)])
 
-        result = result / sut.CPU_PHYSICAL_CORES
+        result = result / self.my_sut_config.CPU_PHYSICAL_CORES
         result.name = "Sys_mean_productivity"
         return result
 
@@ -228,14 +228,14 @@ class HTLinearModel:
     # Ci_atd = Ci_unhalted_clk_td1 / cpu_clk_unhalted_thread_any + 2 * Ci_unhalted_clk_td2 / cpu_clk_unhalted_thread_any
     def compute_atd(self, dataset, Ci_unhalted_clk_td1, Ci_unhalted_clk_td2=None):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 tmp_atd = Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)].copy()
                 # Calculate using unhalted clocks of the first logical core of cpu c
-                tmp_atd = tmp_atd.div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
+                tmp_atd = tmp_atd.div(dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
 
                 if Ci_unhalted_clk_td2 != None:
-                    tmp_td2 = Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any']) \
+                    tmp_td2 = Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any']) \
                         .multiply(2)
                     tmp_atd = tmp_atd.add(tmp_td2)
 
@@ -246,14 +246,14 @@ class HTLinearModel:
     # Compute the system global mean of Ci_atd
     def compute_sys_mean_atd(self, Ci_atd):
         result = pd.Series(name='Sys_mean_atd')
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
                     result = result.append(Ci_atd['S' + str(s) + '-C' + str(c)])
                 else:
                     result = result.add(Ci_atd['S' + str(s) + '-C' + str(c)])
 
-        result = result / sut.CPU_PHYSICAL_CORES
+        result = result / self.my_sut_config.CPU_PHYSICAL_CORES
         result.name = "Sys_mean_atd"
         return result
 
@@ -261,31 +261,31 @@ class HTLinearModel:
     # Ci_cbt = cpu_clk_unhalted.ref_tsc / CPU_NOMINAL_FREQUENCY (that is TSC ?)
     def compute_core_busy_time(self, dataset):
         result = {}
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 tmp_ref_tsc = pd.Series()
 
-                for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_ref_tsc) == 0:
                         tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
                     else:
                         tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
 
-                tmp_ref_tsc = tmp_ref_tsc.div(sut.CPU_THREADS_PER_CORE)
-                result['S' + str(s) + '-C' + str(c)] = tmp_ref_tsc.div(sut.CPU_NOMINAL_FREQUENCY)
+                tmp_ref_tsc = tmp_ref_tsc.div(self.my_sut_config.CPU_THREADS_PER_CORE)
+                result['S' + str(s) + '-C' + str(c)] = tmp_ref_tsc.div(self.my_sut_config.CPU_NOMINAL_FREQUENCY)
         return result
 
     # Compute the system global mean of Ci_cbt
     def compute_sys_mean_core_busy_time(self, Ci_cbt):
         result = pd.Series(name='Sys_mean_cbt')
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
                     result = result.append(Ci_cbt['S' + str(s) + '-C' + str(c)])
                 else:
                     result = result.add(Ci_cbt['S' + str(s) + '-C' + str(c)])
 
-        result = result / sut.CPU_PHYSICAL_CORES
+        result = result / self.my_sut_config.CPU_PHYSICAL_CORES
         result.name = "Sys_mean_cbt"
         return result
 
@@ -306,33 +306,33 @@ class HTLinearModel:
         result = {}
 
         # Compute and sort positions to be changed
-        positions = [i + 10 * times for i in range(startRun, endRun) for times in range(sut.NUM_TESTS)]
+        positions = [i + 10 * times for i in range(startRun, endRun) for times in range(bac.NUM_TESTS)]
         positions.sort()
 
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']['mean']))], dtype=float) # Set all to zero
 
                 for i in positions:
-                    for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                    for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                         result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i]
 
                     # Calculate IPC at TD max using unhalted clocks of the first logical core of cpu c
-                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['mean']['CPU' + str(sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread'][i]
+                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread'][i]
 
         return result
 
     # Compute the system global mean of Ci_max_IPC_td_max
     def compute_sys_mean_IPC_at_td_max(self, Ci_IPC_max_td_max):
         result = pd.Series(name='Sys_mean_IPC')
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
                     result = result.append(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
                 else:
                     result = result.add(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
 
-        result = result / sut.CPU_PHYSICAL_CORES
+        result = result / self.my_sut_config.CPU_PHYSICAL_CORES
         result.name = "Sys_mean_IPC"
         return result
 
@@ -340,23 +340,23 @@ class HTLinearModel:
     # If HT is ON then the mean uses IPC estimation at TD = 2
     # If HT is OFF then the mean uses IPC estimation at TD = 1
     def compute_sys_mean_estimated_IPC(self, linear_model):
-        result = pd.Series(name='Sys_mean_estimated_IPC_TD' + str(2 if sut.CPU_HT_ACTIVE else 1))
+        result = pd.Series(name='Sys_mean_estimated_IPC_TD' + str(2 if self.my_sut_config.CPU_HT_ACTIVE else 1))
 
         inserted = False
         index = 0
 
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if not inserted :
-                    result = result.set_value(index, linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][sut.CPU_HT_ACTIVE])
+                    result = result.set_value(index, linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][self.my_sut_config.CPU_HT_ACTIVE])
                     inserted = True
                 else:
-                    result[index] = result[index] + linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][sut.CPU_HT_ACTIVE]
+                    result[index] = result[index] + linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][self.my_sut_config.CPU_HT_ACTIVE]
             index += 1
             inserted = False
 
-        result = result / sut.CPU_PHYSICAL_CORES
-        result.name = "Sys_mean_estimated_IPC_TD" + str(2 if sut.CPU_HT_ACTIVE else 1)
+        result = result / self.my_sut_config.CPU_PHYSICAL_CORES
+        result.name = "Sys_mean_estimated_IPC_TD" + str(2 if self.my_sut_config.CPU_HT_ACTIVE else 1)
         return result
 
     # Compute the mean frequencies for each core
@@ -364,12 +364,12 @@ class HTLinearModel:
     def compute_mean_frequencies(self, dataset):
         result = {}
 
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 tmp_freq = pd.Series()
                 tmp_ref_tsc = pd.Series()
 
-                for j in sut.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_freq) == 0 and len(tmp_ref_tsc) == 0:
                         tmp_freq = tmp_freq.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
                         tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
@@ -378,24 +378,24 @@ class HTLinearModel:
                         tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
 
                 # Divide by number of threads per core
-                tmp_freq = tmp_freq.div(sut.CPU_THREADS_PER_CORE)
-                tmp_ref_tsc = tmp_ref_tsc.div(sut.CPU_THREADS_PER_CORE)
+                tmp_freq = tmp_freq.div(self.my_sut_config.CPU_THREADS_PER_CORE)
+                tmp_ref_tsc = tmp_ref_tsc.div(self.my_sut_config.CPU_THREADS_PER_CORE)
 
-                result['S' + str(s) + '-C' + str(c)] = tmp_freq.div(tmp_ref_tsc).multiply(sut.CPU_NOMINAL_FREQUENCY)
+                result['S' + str(s) + '-C' + str(c)] = tmp_freq.div(tmp_ref_tsc).multiply(self.my_sut_config.CPU_NOMINAL_FREQUENCY)
 
         return result
 
     # Compute the system global frequency mean
     def compute_sys_mean_frequency(self, Ci_frequency):
         result = pd.Series(name='Sys_mean_FREQ')
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
                     result = result.append(Ci_frequency['S' + str(s) + '-C' + str(c)])
                 else:
                     result = result.add(Ci_frequency['S' + str(s) + '-C' + str(c)])
 
-        result = result / sut.CPU_PHYSICAL_CORES
+        result = result / self.my_sut_config.CPU_PHYSICAL_CORES
         result.name = "Sys_mean_FREQ"
 
         return result
@@ -415,17 +415,17 @@ class HTLinearModel:
 
         # After the transposition, add columns
         # Print estimated IPC and computed real IPC
-        for s in range(sut.CPU_SOCKETS):
-            for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        for s in range(self.my_sut_config.CPU_SOCKETS):
+            for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 df['S' + str(s) + '-C' + str(c) + '-EST-IPC-TD1'] = linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][0]
 
-                if sut.CPU_HT_ACTIVE: # Hyperthreading ON
+                if self.my_sut_config.CPU_HT_ACTIVE: # Hyperthreading ON
                     df['S' + str(s) + '-C' + str(c) + '-EST-IPC-TD2'] = linear_model['S' + str(s) + '-C' + str(c)]['coefficients'][0][1]
 
-                df['S' + str(s) + '-C' + str(c) + '-REAL-IPC-TD' + str(2 if sut.CPU_HT_ACTIVE else 1)] = Ci_max_IPC_td_max['S' + str(s) + '-C' + str(c)]
+                df['S' + str(s) + '-C' + str(c) + '-REAL-IPC-TD' + str(2 if self.my_sut_config.CPU_HT_ACTIVE else 1)] = Ci_max_IPC_td_max['S' + str(s) + '-C' + str(c)]
 
-        # for s in range(sut.CPU_SOCKETS):
-        #     for c in range(sut.CPU_PHYSICAL_CORES_PER_SOCKET):
+        # for s in range(self.my_sut_config.CPU_SOCKETS):
+        #     for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
         #         df['S' + str(s) + '-C' + str(c) + '-INSTRUCTIONS'] = Ci_instr['S' + str(s) + '-C' + str(c)]
         #         df['S' + str(s) + '-C' + str(c) + '-MAX-INSTRUCTIONS'] = Ci_instr_max['S' + str(s) + '-C' + str(c)]
 

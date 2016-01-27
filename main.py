@@ -1,4 +1,3 @@
-import sys
 import os
 import argparse
 import sqlite3
@@ -14,10 +13,10 @@ from parsers.SarParser import SarParser
 from parsers.PCMParser import PCMParser
 from parsers.RUBBoSParser import RUBBoSParser
 from parsers.PerfParser import PerfParser
-from statistics.LinearRegression import LinearRegression
-from statistics.RANSACRegressor import RANSACRegressor
+from parsers.SysConfigParser import SysConfigParser
 from statistics.HTLinearModel import HTLinearModel
-import config.SUTConfig as sut
+from config.SUTConfig import SUTConfig
+import config.BenchmarkAnalysisConfig as bac
 
 __author__ = 'francesco'
 
@@ -25,10 +24,12 @@ parser = argparse.ArgumentParser(description='HTperf tool: parse, aggregate, sel
 parser.add_argument('benchmarkdirpath', metavar='benchmarkdirpath', help='path to directory containing n benchmark report directories, each one containing the csv report files')
 parser.add_argument('reportdirpath', metavar='reportdirpath', help='path to directory in which the tool generates the reports')
 parser.add_argument('-pcm', help='indicates if a pcm.csv file must be parsed', dest='pcm', action='store_true')
+parser.add_argument('-sysconfig', help='indicates if a sysConfig.csv file must be parsed', dest='sysconfig', action='store_true')
 args = parser.parse_args()
 
 # Settings
 using_pcm = args.pcm
+using_sysconfig = args.sysconfig
 
 # Get the chosen output dir and create it if necessary
 OUTPUT_DIR = os.path.join(args.reportdirpath, '')
@@ -37,7 +38,7 @@ os.makedirs(os.path.dirname(OUTPUT_DIR), exist_ok=True)
 # Set path and file names
 path_to_tests = args.benchmarkdirpath
 
-test_names = [name for name in os.listdir(path_to_tests)]
+test_names = [name for name in os.listdir(path_to_tests) if not os.path.isfile(path_to_tests + "/" + name)]
 test_names.sort()
 test_numbers = [i + 1 for i in range(len(test_names))]
 
@@ -46,12 +47,14 @@ rubbos_file = "/rubbos.csv"
 sar_file = "/sar-client0.csv"
 pcm_file = "/pcm.csv"
 perf_file = "/perf.csv"
+sysconfig_file = "/sysConfig.csv"
 
 # Create output directory
 for test in test_names:
     os.makedirs(os.path.dirname(OUTPUT_DIR + test + '/'), exist_ok=True)
 
 # Data structures
+system_config = {}
 rubbos_dataframes = {}
 sar_dataframes = {}
 pcm_dataframes = {}
@@ -62,6 +65,14 @@ rubbos_datasets = {}
 ht_linear_models = {}
 
 # ======================= DATA IMPORT =============================
+if using_sysconfig:
+    system_config = SysConfigParser().parse(path_to_tests + '/' + sysconfig_file)
+    my_sut_config = SUTConfig()
+    my_sut_config.set(system_config)
+else:
+    my_sut_config = SUTConfig()
+    my_sut_config.set_manual()
+
 for test in test_names:
     rubbos_dataframes[test] = RUBBoSParser().parse(path_to_tests + '/' + test + rubbos_file)
     sar_dataframes[test] = SarParser().parse(path_to_tests + '/' + test + sar_file)
@@ -130,7 +141,7 @@ conn.close()
 
 # ======================= STATISTICS =====================================
 for test in test_names:
-    ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], OUTPUT_DIR, test)
+    ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], OUTPUT_DIR, test, my_sut_config)
 
 # HTLinearModel().estimate(rubbos_dataset)
 
@@ -167,8 +178,6 @@ for test, num in zip(test_names[:-1], test_numbers):
 
 title = title + str(test_numbers[-1]) + ') ' + test_names[len(test_names) - 1]
 
-plotter.gen_graph(title + '\nLinear Regressions considering first ' + str(sut.NUM_SAMPLES) + ' samples',
+plotter.gen_graph(title + '\nLinear Regressions considering first ' + str(bac.NUM_SAMPLES) + ' samples',
                   'Throughput', 'Utilization', 'Response Time', 'Tot Avg Thread Density')
-
-
 
