@@ -1,3 +1,4 @@
+#!/usr/bin/python3.4
 import os
 import argparse
 import sqlite3
@@ -8,7 +9,6 @@ import matplotlib.pyplot as plt
 from database import DBConstants
 from datasets.RUBBoSDataset import RUBBoSDataset
 from graph_plotters.HTModelPlotter import HTModelPlotter
-from parsers.Parser import Parser
 from parsers.SarParser import SarParser
 from parsers.PCMParser import PCMParser
 from parsers.RUBBoSParser import RUBBoSParser
@@ -74,6 +74,7 @@ else:
     my_sut_config.set_manual()
 
 for test in test_names:
+    # rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed") # Only if using the detailed version of rubbos report file
     rubbos_dataframes[test] = RUBBoSParser().parse(path_to_tests + '/' + test + rubbos_file)
     sar_dataframes[test] = SarParser().parse(path_to_tests + '/' + test + sar_file)
     perf_dataframes[test] = PerfParser().parse(path_to_tests + '/' + test + perf_file)
@@ -81,30 +82,19 @@ for test in test_names:
     if using_pcm:
         pcm_dataframes[test] = PCMParser().parse(path_to_tests + '/' + test + pcm_file)
 
-# rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed") # Only if using the detailed version of rubbos report file
-# rubbos_dataframe = RUBBoSParser().parse(directory + rubbos_file)
-# sar_dataframe = SarParser().parse(directory + sar_file)
-# pcm_dataframe = PCMParser().parse(directory + pcm_file)
-# perf_dataframe = PerfParser().parse(directory + perf_file)
-
 # ======================= PERSIST DATA IN SQLITE ====================
 os.remove(DBConstants.DB_NAME) # Remove DB file and reconstruct it
 conn = sqlite3.connect(DBConstants.DB_NAME)
 c = conn.cursor()
 
 for test in test_names:
+    #rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
     rubbos_dataframes[test].to_sql(DBConstants.RUBBOS_TABLE, conn, if_exists='append')
     sar_dataframes[test].to_sql(DBConstants.SAR_TABLE, conn, if_exists='append')
     perf_dataframes[test].to_sql(DBConstants.PERF_TABLE, conn, if_exists='append')
 
     if using_pcm:
         pcm_dataframes[test].to_sql(DBConstants.PCM_TABLE, conn, if_exists='append')
-
-#rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
-# rubbos_dataframe.to_sql(DBConstants.RUBBOS_TABLE, conn)
-# sar_dataframe.to_sql(DBConstants.SAR_TABLE, conn)
-# pcm_dataframe.to_sql(DBConstants.PCM_TABLE, conn)
-# perf_dataframe.to_sql(DBConstants.PERF_TABLE, conn)
 
 conn.commit()
 
@@ -130,8 +120,6 @@ conn.commit()
 for test in test_names:
     rubbos_datasets[test] = RUBBoSDataset().create(rubbos_dataframes[test], conn, OUTPUT_DIR, test, using_pcm)
 
-# rubbos_dataset = RUBBoSDataset().create(rubbos_dataframe, conn)
-
 conn.close()
 
 # Alternative to sqlite3: SQLAlchemy in order to use pd.read_sql_table
@@ -142,11 +130,6 @@ conn.close()
 # ======================= STATISTICS =====================================
 for test in test_names:
     ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], OUTPUT_DIR, test, my_sut_config)
-
-# HTLinearModel().estimate(rubbos_dataset)
-
-#LinearRegression().print_diag("mean", "UavgTot", "run", "XavgTot", rubbos_dataset)
-#RANSACRegressor().print_diag("rubbos", "rubbos", rubbos_dataframe, rubbos_dataframe)
 
 # ======================= PLOT GRAPHS =====================================
 plotter = HTModelPlotter().init(OUTPUT_DIR)

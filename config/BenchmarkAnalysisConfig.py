@@ -7,7 +7,7 @@ __author__ = 'francesco'
 # Test parameters (used for Linear Regression and others)
 NUM_SAMPLES = 4 # Number of the first runs to use in the Linear Regression (e.g. first 4 over 10)
 NUM_RUNS = 10 # Number of runs in one test, usually 10 (i.e. number of steps in one growing load ladder)
-NUM_TESTS = 10 # Number of test repetitions, usually 10 (i.e. number of growing load ladders). Globally we have a number of single runs equal to NUM_RUNS * NUM_TESTS
+NUM_TESTS = 1 # Number of test repetitions, usually 10 (i.e. number of growing load ladders). Globally we have a number of single runs equal to NUM_RUNS * NUM_TESTS
 
 # Values to plot streched line
 # MAX_THROUGHPUT = 700 # Rubbos 2000 load

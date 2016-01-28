@@ -194,7 +194,6 @@ class HTLinearModel:
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
-                # result['S' + str(s) + '-C' + str(c)] = self.my_sut_config.CPU_NOMINAL_FREQUENCY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
                 result['S' + str(s) + '-C' + str(c)] = self.my_sut_config.CPU_MAX_FREQUENCY_ALL_CORES_BUSY * linear_model['S' + str(s) + '-C' + str(c)]['coefficients']
 
         return result
@@ -258,7 +257,7 @@ class HTLinearModel:
         return result
 
     # Compute the core busy time (C0 state residency)
-    # Ci_cbt = cpu_clk_unhalted.ref_tsc / CPU_NOMINAL_FREQUENCY (that is TSC ?)
+    # Ci_cbt = cpu_clk_unhalted.ref_tsc / CPU_BASE_OPERATING_FREQUENCY (that is TSC)
     def compute_core_busy_time(self, dataset):
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
@@ -272,7 +271,7 @@ class HTLinearModel:
                         tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
 
                 tmp_ref_tsc = tmp_ref_tsc.div(self.my_sut_config.CPU_THREADS_PER_CORE)
-                result['S' + str(s) + '-C' + str(c)] = tmp_ref_tsc.div(self.my_sut_config.CPU_NOMINAL_FREQUENCY)
+                result['S' + str(s) + '-C' + str(c)] = tmp_ref_tsc.div(self.my_sut_config.CPU_BASE_OPERATING_FREQUENCY)
         return result
 
     # Compute the system global mean of Ci_cbt
@@ -360,7 +359,7 @@ class HTLinearModel:
         return result
 
     # Compute the mean frequencies for each core
-    # frequency = (cpu_clk_unhalted_thread / cpu_clk_unhalted.ref_tsc) * CPU_NOMINAL_FREQUENCY
+    # frequency = (cpu_clk_unhalted_thread / cpu_clk_unhalted.ref_tsc) * CPU_BASE_OPERATING_FREQUENCY
     def compute_mean_frequencies(self, dataset):
         result = {}
 
@@ -381,7 +380,7 @@ class HTLinearModel:
                 tmp_freq = tmp_freq.div(self.my_sut_config.CPU_THREADS_PER_CORE)
                 tmp_ref_tsc = tmp_ref_tsc.div(self.my_sut_config.CPU_THREADS_PER_CORE)
 
-                result['S' + str(s) + '-C' + str(c)] = tmp_freq.div(tmp_ref_tsc).multiply(self.my_sut_config.CPU_NOMINAL_FREQUENCY)
+                result['S' + str(s) + '-C' + str(c)] = tmp_freq.div(tmp_ref_tsc).multiply(self.my_sut_config.CPU_BASE_OPERATING_FREQUENCY)
 
         return result
 

@@ -1,3 +1,4 @@
+#!/usr/bin/python3.4
 import os
 import shlex
 import subprocess
