@@ -28,7 +28,7 @@ class SUTConfig:
         elif system_config['Model'] == 26 or system_config['Model'] == 30 or system_config['Model'] == 46:
             self.CPU_BUS_CLOCK_FREQUENCY = 133330000 # BCLK for Nehalem Architecture (model number 0x1a = 26 or 0x1e = 30 or 0x2e = 46)
 
-        self.CPU_BASE_OPERATING_FREQUENCY = system_config['BaseOperatingRatio'] * self.CPU_BUS_CLOCK_FREQUENCY # Is the TSC Reference Frequency, CPU_BASE_OPERATING_FREQUENCY = CPU_BASE_OPERATING_RATIO (Max Non Turbo Ratio) * CPU_BUS_CLOCK_FREQUENCY
+        self.CPU_BASE_OPERATING_FREQUENCY = system_config['BaseOperatingRatio'] * self.CPU_BUS_CLOCK_FREQUENCY # Is the TSC Reference Frequency, used to compute the Core Busy Time and the system mean frequency. CPU_BASE_OPERATING_FREQUENCY = CPU_BASE_OPERATING_RATIO (Max Non Turbo Ratio) * CPU_BUS_CLOCK_FREQUENCY
 
         self.CPU_BASE_FREQUENCY = system_config['BaseFrequency'] * 1000000000 # The one advertised in CPU Model Name
 
@@ -40,7 +40,7 @@ class SUTConfig:
             print("TurboBoost OFF")
             self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY = self.CPU_BASE_FREQUENCY
 
-        # If the TSC is different from what is advertised we warn the user
+        # If the TSC is different from the advertised frequency we warn the user
         if self.CPU_BASE_OPERATING_FREQUENCY != self.CPU_BASE_FREQUENCY:
             print("Warning: frequencies are not equal! CPU_BASE_OPERATING_FREQUENCY: " + str(self.CPU_BASE_OPERATING_FREQUENCY) + " while CPU_BASE_FREQUENCY: " + str(self.CPU_BASE_FREQUENCY))
 
@@ -97,7 +97,8 @@ class SUTConfig:
         # CPU_BUS_CLOCK_FREQUENCY = 133330000 # BCLK for Nehalem Architecture
         # CPU_BASE_OPERATING_FREQUENCY = CPU_BASE_OPERATING_RATIO * CPU_BUS_CLOCK_FREQUENCY # Is the Reference Frequency
 
-        self.CPU_BASE_FREQUENCY = 2500000000 # That is the CPU Ref TSC
+        self.CPU_BASE_FREQUENCY = 2000000000 # That is the advertised nominal frequency
+        self.CPU_BASE_OPERATING_FREQUENCY = 2500000000 # Is the TSC Reference Frequency, used to compute the Core Busy Time and the system mean frequency.
 
         # self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY = 800000000
         # self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY = 1200000000
