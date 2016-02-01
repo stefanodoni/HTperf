@@ -89,6 +89,8 @@ class SUTConfig:
             for core_num in range(int(self.CPU_PHYSICAL_CORES)):
                 self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(core_num)] = [core_num]
 
+        print("CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING: " + str(self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING))
+
     # Set parameters manually
     def set_manual(self):
         # CPU SETTINGS

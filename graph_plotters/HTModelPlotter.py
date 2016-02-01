@@ -2,13 +2,14 @@ from sklearn.metrics import mean_absolute_error as mae
 import matplotlib.pyplot as plt
 import config.BenchmarkAnalysisConfig as bac
 from sklearn import linear_model as lm
+import numpy as np
 
 __author__ = 'francesco'
 
 class HTModelPlotter:
     output_dir = ''
     fig, axarr, ax2 = None, None, None
-    X_line = [[i] for i in range(0, bac.MAX_THROUGHPUT)] # Used to plot streched estimated line
+    x_max = 0 # Used to limit the X axis
     plots = []
     scatters = []
     scatter_labels = []
@@ -29,6 +30,8 @@ class HTModelPlotter:
         X = X_dataset.reshape(len(X_dataset), 1)
         X_lr = X.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
+        X_line = [[i] for i in range(0, self.x_max)] # Used to plot streched estimated line
+
         if percentual:
             y = y_dataset * 100
         else:
@@ -41,11 +44,11 @@ class HTModelPlotter:
         regr.fit(X_lr, y_lr)
 
         if y_axis == 1: # Use secondary y axis on primary X axis
-            tmp_plot, = self.ax2.plot(self.X_line, regr.predict(self.X_line), color=color, linewidth=2, label=label + "\n" +
+            tmp_plot, = self.ax2.plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
                                                                                                              "R^2: " + str(regr.score(X, y)) + "\n"
                                                                                                                                                "MAE: " + str(mae(y, regr.predict(X))))
         else: # Use primary y axis on X_axis
-            tmp_plot, = self.axarr[X_axis].plot(self.X_line, regr.predict(self.X_line), color=color, linewidth=2, label=label + "\n" +
+            tmp_plot, = self.axarr[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
                                                                                                                        "R^2: " + str(regr.score(X, y)) + "\n"
                                                                                                                                                          "MAE: " + str(mae(y, regr.predict(X))))
         self.plots.append(tmp_plot)
@@ -53,6 +56,7 @@ class HTModelPlotter:
     # Plot scatter X_dataset vs [percentual] y_dataset on given X_axis and y_axis
     def plot_scatter(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False):
         X = X_dataset.reshape(len(X_dataset), 1)
+        self.x_max = (np.amax(X) + 100) if self.x_max < (np.amax(X) + 100) else self.x_max # Update the x_max with the highes X value
 
         if percentual:
             y = y_dataset * 100
@@ -72,6 +76,7 @@ class HTModelPlotter:
     # Standard plot X_dataset vs [percentual] y_dataset on given X_axis and y_axis
     def plot_standard(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False, style=''):
         X = X_dataset.reshape(len(X_dataset), 1)
+        self.x_max = (np.amax(X) + 100) if self.x_max < (np.amax(X) + 100) else self.x_max # Update the x_max with the highes X value
 
         if percentual:
             y = y_dataset * 100
@@ -109,9 +114,9 @@ class HTModelPlotter:
         lgd = self.axarr[1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
 
         # Set axes limits
-        self.axarr[0].set_xlim(xmin=0, xmax=bac.MAX_THROUGHPUT)
-        self.axarr[0].set_ylim(ymin=0)
-        # self.axarr[0].set_ylim(ymin=0, ymax=100)
+        self.axarr[0].set_xlim(xmin=0, xmax=self.x_max)
+        # self.axarr[0].set_ylim(ymin=0)
+        self.axarr[0].set_ylim(ymin=0, ymax=100)
         self.ax2.set_ylim(ymin=0)
 
         # Print plot to file: png, pdf, ps, eps and svg
