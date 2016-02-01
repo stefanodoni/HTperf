@@ -30,7 +30,7 @@ class HTModelPlotter:
         X = X_dataset.reshape(len(X_dataset), 1)
         X_lr = X.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
-        X_line = [[i] for i in range(0, self.x_max)] # Used to plot streched estimated line
+        X_line = [[i] for i in range(0, self.x_max + bac.MAX_THROUGHPUT_PADDING)] # Used to plot streched estimated line
 
         if percentual:
             y = y_dataset * 100
@@ -56,7 +56,7 @@ class HTModelPlotter:
     # Plot scatter X_dataset vs [percentual] y_dataset on given X_axis and y_axis
     def plot_scatter(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False):
         X = X_dataset.reshape(len(X_dataset), 1)
-        self.x_max = (np.amax(X) + 100) if self.x_max < (np.amax(X) + 100) else self.x_max # Update the x_max with the highes X value
+        self.x_max = np.amax(X) if self.x_max < np.amax(X) else self.x_max # Update the x_max with the highes X value
 
         if percentual:
             y = y_dataset * 100
@@ -76,7 +76,7 @@ class HTModelPlotter:
     # Standard plot X_dataset vs [percentual] y_dataset on given X_axis and y_axis
     def plot_standard(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False, style=''):
         X = X_dataset.reshape(len(X_dataset), 1)
-        self.x_max = (np.amax(X) + 100) if self.x_max < (np.amax(X) + 100) else self.x_max # Update the x_max with the highes X value
+        self.x_max = np.amax(X) if self.x_max < np.amax(X) else self.x_max # Update the x_max with the highes X value
 
         if percentual:
             y = y_dataset * 100
@@ -114,9 +114,11 @@ class HTModelPlotter:
         lgd = self.axarr[1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
 
         # Set axes limits
-        self.axarr[0].set_xlim(xmin=0, xmax=self.x_max)
-        # self.axarr[0].set_ylim(ymin=0)
-        self.axarr[0].set_ylim(ymin=0, ymax=100)
+        self.axarr[0].set_xlim(xmin=0, xmax=(self.x_max + bac.MAX_THROUGHPUT_PADDING))
+        if bac.LIMIT_Y_AXIS_TO_100:
+            self.axarr[0].set_ylim(ymin=0, ymax=100)
+        else:
+            self.axarr[0].set_ylim(ymin=0)
         self.ax2.set_ylim(ymin=0)
 
         # Print plot to file: png, pdf, ps, eps and svg
