@@ -132,33 +132,43 @@ for test in test_names:
     ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], OUTPUT_DIR, test, my_sut_config)
 
 # ======================= PLOT GRAPHS =====================================
-plotter = HTModelPlotter().init(OUTPUT_DIR)
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 
 # cmap = plt.get_cmap('gnuplot')
 # colors = [cmap(i) for i in np.linspace(0, 1, len(test_numbers))]
+colors = ['#281D46', '#504FAF', '#088DA5', '#FE9900', '#E12727']
 
 # First plot scatter and standard points in order to determinate the maximum X value
-# for test, num, color in zip(test_names, test_numbers, colors):
-for test, num in zip(test_names, test_numbers):
-    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0, 'blue', str(num) + ') C0 Productivity', True)
-    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', str(num) + ') Tot Avg Utilization (Benchmark)')
-    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', str(num) + ') Tot Avg Core Busy Time (C0 state)', True)
-    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, 'purple', str(num) + ') Tot Avg Utilization (Sar)')
-    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 1, 0, 'violet', str(num) + ') Tot Avg Thread Density')
-    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['RavgTot'], 0, 1, 'red', str(num) + ') Tot Avg Response Time')
+for test, num, color in zip(test_names, test_numbers, colors):
+# for test, num in zip(test_names, test_numbers):
+#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', str(num) + ') Tot Avg Utilization (Benchmark)', False, True)
+#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', str(num) + ') Tot Avg Core Busy Time (C0 state)', True, True)
+    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, None, False, True)
+    # plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['RavgTot'], 0, 1, color, str(num) + ') Tot Avg Response Time')
+
+    # plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, None, True, True)
+
+    # plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 2, 0, color, str(num) + ') Tot Avg Thread Density')
 
 # Then use the x_max value to print the lr lines
-# for test, num, color in zip(test_names, test_numbers, colors):
-for test, num in zip(test_names, test_numbers):
-    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0, 'blue', str(num) + ') C0 Productivity LR', True)
-    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', str(num) + ') Tot Avg Utilization (Benchmark) LR')
-    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', str(num) + ') Tot Avg Core Busy Time (C0 state) LR', True)
-    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, 'purple', str(num) + ') Tot Avg Utilization (Sar) LR')
+for test, num, color in zip(test_names, test_numbers, colors):
+# for test, num in zip(test_names, test_numbers):
+#     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', str(num) + ') Tot Avg Utilization (Benchmark) LR', False, True)
+#     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', str(num) + ') Tot Avg Core Busy Time (C0 state) LR', True, True)
+    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, True)
+
+    # plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, str(num) + ') C0 Productivity LR', True, True)
 
 title = ''
 for test, num in zip(test_names, test_numbers):
-    title = title + str(num) + ') ' + test + ('\n' if num != test_numbers[-1] else '')
+    title = title + test + ("\n" if num != test_numbers[-1] else '')
 
-plotter.gen_graph(title + '\nLinear Regressions considering first ' + str(bac.NUM_SAMPLES) + ' samples',
-                  'Throughput', 'Utilization', 'Response Time', 'Tot Avg Thread Density')
+title = title + "\nLinear Regressions considering first " + str(bac.NUM_SAMPLES) + " samples"
+
+title = "Il mio esperimento"
+
+plotter.gen_graph(title,
+                  {0: 'System Throughput'},# 1: 'System Throughput', 2: 'System Throughput'},
+                  {0: 'CPU Traditional Utilization'})#, 1: 'CPU Productivity'})
+                  #, {0: 'Response Time'}, 'Productivity', 'Tot Avg Thread Density')
 

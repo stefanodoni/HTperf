@@ -14,7 +14,7 @@ START_RUN = 1
 END_RUN = 10
 
 # Value added to x_max to plot streched line
-MAX_THROUGHPUT_PADDING = 100
+X_MAX_PADDING = 100
 
 LIMIT_Y_AXIS_TO_100 = True
 
