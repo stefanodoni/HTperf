@@ -32,7 +32,7 @@ class HTModelPlotter:
             if secondary_axes != None:
                 self.ax2[0] = self.axarr.twinx() # Secondary y axis in first subplot
 
-            self.axarr.axhline(y=100, c="yellow", linestyle='--', linewidth=2) # Plot dashed yellow line to show 100 limit
+            # self.axarr.axhline(y=100, c="yellow", linestyle='--', linewidth=2) # Plot dashed yellow line to show 100 limit
 
         else:
             self.fig, self.axarr = plt.subplots(self.num_subplots, figsize=(8, self.num_subplots * 4))
@@ -158,7 +158,7 @@ class HTModelPlotter:
         self.plots.append(tmp_plot)
 
     # Set plot title, labels, legend and generate graph
-    def gen_graph(self, title,
+    def gen_graph(self, filename, title,
                   X_axis_labels, y_axis_primary_labels, y_axis_secondary_labels=None):
 
         params = {'text.usetex': True,
@@ -237,9 +237,9 @@ class HTModelPlotter:
 
         # Print plot to file: png, pdf, ps, eps and svg
         # with legend under the graph
-        plt.savefig(self.output_dir + 'graph.eps', format = 'eps', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.savefig(self.output_dir + 'graph.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.savefig(self.output_dir + 'graph.pdf', format = 'pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        # plt.savefig(self.output_dir + filename + '.eps', format = 'eps', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(self.output_dir + filename + '.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(self.output_dir + filename + '.pdf', format = 'pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
 
         # plt.show()
 
