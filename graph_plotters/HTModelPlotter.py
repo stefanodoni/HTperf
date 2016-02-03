@@ -13,7 +13,8 @@ class HTModelPlotter:
     ax2 = {}
     num_subplots = 0
     secondary_axes = []
-    percentual_axes = []
+    y_axis_min_values = {}
+    y_axis_max_values = {}
     x_max = 0 # Used to limit the X axis
     plots = []
     scatters = []
@@ -45,7 +46,7 @@ class HTModelPlotter:
         return self
 
     # Plot scatter X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_scatter(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, percentual=False, axis_percentual_scale=False):
+    def plot_scatter(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, percentual=False, y_axis_min=None, y_axis_max=None):
         X = X_dataset.reshape(len(X_dataset), 1)
         self.x_max = np.amax(X) if self.x_max < np.amax(X) else self.x_max # Update the x_max with the highes X value
 
@@ -62,7 +63,10 @@ class HTModelPlotter:
             else:
                 tmp_scatter = self.ax2[X_axis].scatter(X, y, color=color)
 
-            self.add_axis_to_percentual_list(self.ax2[X_axis], axis_percentual_scale)
+            if y_axis_min != None:
+                self.y_axis_min_values[self.ax2[X_axis]] = y_axis_min
+            if y_axis_max != None:
+                self.y_axis_max_values[self.ax2[X_axis]] = y_axis_max
         else: # Use primary y axis on X_axis
             if isinstance(self.axarr, np.ndarray):
                 if label != None:
@@ -70,21 +74,27 @@ class HTModelPlotter:
                 else:
                     tmp_scatter = self.axarr[X_axis].scatter(X, y, color=color)
 
-                self.add_axis_to_percentual_list(self.axarr[X_axis], axis_percentual_scale)
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr[X_axis]] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr[X_axis]] = y_axis_max
             else:
                 if label != None:
                     tmp_scatter = self.axarr.scatter(X, y, color=color, label=label)
                 else:
                     tmp_scatter = self.axarr.scatter(X, y, color=color)
 
-                self.add_axis_to_percentual_list(self.axarr, axis_percentual_scale)
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr] = y_axis_max
 
         if label != None:
             self.scatters.append(tmp_scatter)
             self.scatter_labels.append(label)
 
     # Standard plot X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_standard(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, style='', percentual=False, axis_percentual_scale=False):
+    def plot_standard(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, style='', percentual=False, y_axis_min=None, y_axis_max=None):
         X = X_dataset.reshape(len(X_dataset), 1)
         self.x_max = np.amax(X) if self.x_max < np.amax(X) else self.x_max # Update the x_max with the highes X value
 
@@ -101,7 +111,10 @@ class HTModelPlotter:
             else:
                 tmp_plot, = self.ax2[X_axis].plot(X, y, style, color=color)
 
-            self.add_axis_to_percentual_list(self.ax2[X_axis], axis_percentual_scale)
+            if y_axis_min != None:
+                self.y_axis_min_values[self.ax2[X_axis]] = y_axis_min
+            if y_axis_max != None:
+                self.y_axis_max_values[self.ax2[X_axis]] = y_axis_max
         else: # Use primary y axis on X_axis
             if isinstance(self.axarr, np.ndarray):
                 if label != None:
@@ -109,20 +122,26 @@ class HTModelPlotter:
                 else:
                     tmp_plot, = self.axarr[X_axis].plot(X, y, style, color=color)
 
-                self.add_axis_to_percentual_list(self.axarr[X_axis], axis_percentual_scale)
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr[X_axis]] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr[X_axis]] = y_axis_max
             else:
                 if label != None:
                     tmp_plot, = self.axarr.plot(X, y, style, color=color, label=label)
                 else:
                     tmp_plot, = self.axarr.plot(X, y, style, color=color)
 
-                self.add_axis_to_percentual_list(self.axarr, axis_percentual_scale)
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr] = y_axis_max
 
         if label != None:
             self.plots.append(tmp_plot)
 
     # Plot Linear Regression of X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False, axis_percentual_scale=False):
+    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False, y_axis_min=None, y_axis_max=None):
         X = X_dataset.reshape(len(X_dataset), 1)
         X_lr = X.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
@@ -143,18 +162,28 @@ class HTModelPlotter:
             tmp_plot, = self.ax2[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
                                                                                                              r"$R^2: " + str(regr.score(X, y)) + "$\n"
                                                                                                              r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
-            self.add_axis_to_percentual_list(self.ax2[X_axis], axis_percentual_scale)
+            if y_axis_min != None:
+                self.y_axis_min_values[self.ax2[X_axis]] = y_axis_min
+            if y_axis_max != None:
+                self.y_axis_max_values[self.ax2[X_axis]] = y_axis_max
         else: # Use primary y axis on X_axis
             if isinstance(self.axarr, np.ndarray):
                 tmp_plot, = self.axarr[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
                                                                                                             r"$R^2: " + str(regr.score(X, y)) + "$\n"
                                                                                                             r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
-                self.add_axis_to_percentual_list(self.axarr[X_axis], axis_percentual_scale)
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr[X_axis]] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr[X_axis]] = y_axis_max
             else:
                 tmp_plot, = self.axarr.plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
                                                                                                             r"$R^2: " + str(regr.score(X, y)) + "$\n"
                                                                                                             r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
-                self.add_axis_to_percentual_list(self.axarr, axis_percentual_scale)
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr] = y_axis_max
+
         self.plots.append(tmp_plot)
 
     # Set plot title, labels, legend and generate graph
@@ -195,15 +224,21 @@ class HTModelPlotter:
             for ax in self.axarr:
                 ax.set_xlim(xmin=0, xmax=(self.x_max + bac.X_MAX_PADDING))
 
-            if bac.LIMIT_Y_AXIS_TO_100:
-                for ax in self.axarr:
-                    if ax in self.percentual_axes:
-                        ax.set_ylim(ymin=0, ymax=100)
-                    else:
-                        ax.set_ylim(ymin=0)
-            else:
-                for ax in self.axarr:
-                    ax.set_ylim(ymin=0)
+            for ax in self.axarr:
+                if ax in self.y_axis_min_values.keys():
+                    ymin = self.y_axis_min_values.get(ax)
+                else:
+                    ymin = 0
+
+                if ax in self.y_axis_max_values.keys():
+                    ymax = self.y_axis_max_values.get(ax)
+                else:
+                    ymax = None
+
+                if ymax != None:
+                    ax.set_ylim(ymin=ymin, ymax=ymax)
+                else:
+                    ax.set_ylim(ymin=ymin)
 
             for i, ax2 in self.ax2.items():
                 ax2.set_ylim(ymin=0)
@@ -227,10 +262,20 @@ class HTModelPlotter:
 
             # Set axes limits
             self.axarr.set_xlim(xmin=0, xmax=(self.x_max + bac.X_MAX_PADDING))
-            if bac.LIMIT_Y_AXIS_TO_100:
-                self.axarr.set_ylim(ymin=0, ymax=100)
+            if self.axarr in self.y_axis_min_values.keys():
+                ymin = self.y_axis_min_values.get(self.axarr)
             else:
-                self.axarr.set_ylim(ymin=0)
+                ymin = 0
+
+            if self.axarr in self.y_axis_max_values.keys():
+                ymax = self.y_axis_max_values.get(self.axarr)
+            else:
+                ymax = None
+
+            if ymax != None:
+                self.axarr.set_ylim(ymin=ymin, ymax=ymax)
+            else:
+                self.axarr.set_ylim(ymin=ymin)
 
             for i, ax2 in self.ax2.items():
                 ax2.set_ylim(ymin=0)
@@ -242,7 +287,3 @@ class HTModelPlotter:
         plt.savefig(self.output_dir + filename + '.pdf', format = 'pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
 
         # plt.show()
-
-    def add_axis_to_percentual_list(self, ax, axis_percentual_scale):
-        if axis_percentual_scale:
-            self.percentual_axes.append(ax)
