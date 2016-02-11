@@ -200,6 +200,7 @@ class HTModelPlotter:
                   'path.simplify': True,
                   'ps.usedistiller': 'xpdf'}
         pylab.rcParams.update(params)
+        # pylab.rcParams['legend.loc'] = 'best' # Automatically tries to put legend in the best location. Remove loc and bbox_to_anchor
 
         # Set title and labels
         if isinstance(self.axarr, np.ndarray):
@@ -218,7 +219,7 @@ class HTModelPlotter:
             # Set plot legend
             plot_labels = [p.get_label() for p in self.plots]
             lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels,
-                                       scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
+                                       scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2)) # loc='lower right' loc='upper left' loc='upper center', bbox_to_anchor=(0.5,-0.2)
 
             # Set axes limits
             for ax in self.axarr:
@@ -258,7 +259,7 @@ class HTModelPlotter:
             # Set plot legend
             plot_labels = [p.get_label() for p in self.plots]
             lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels,
-                                       scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2))
+                                       scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2)) # loc='lower right' loc='upper left' loc='upper center', bbox_to_anchor=(0.5,-0.2)
 
             # Set axes limits
             self.axarr.set_xlim(xmin=0, xmax=(self.x_max + bac.X_MAX_PADDING))
@@ -282,7 +283,7 @@ class HTModelPlotter:
 
         # Print plot to file: png, pdf, ps, eps and svg
         # with legend under the graph
-        # plt.savefig(self.output_dir + filename + '.eps', format = 'eps', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(self.output_dir + filename + '.ps', format = 'ps', bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.savefig(self.output_dir + filename + '.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.savefig(self.output_dir + filename + '.pdf', format = 'pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
 

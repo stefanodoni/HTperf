@@ -6,11 +6,11 @@ import config.SUTConfig as sut
 
 __author__ = 'francesco'
 
-class RUBBoSDataset (HTDataset):
+class BenchmarkDataset (HTDataset):
     def create(self, dataframe, DBconn, output_dir, test_name, using_pcm):
 
         # The returned dataset is a dictionary that contains the following fields:
-        #   - runs: Pandas DataFrame, contains the RUBBoS report of each run
+        #   - runs: Pandas DataFrame, contains the benchmark report of each run
         #   - pcm-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of PCM PCs
         #   - perf-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of Perf PCs
         mydataset = {}

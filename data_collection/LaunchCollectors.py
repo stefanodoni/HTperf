@@ -27,7 +27,7 @@ count = args.count # Total sar duration is sarInterval * sarCount seconds
 
 perfLog = OUTPUT_DIR + 'perf.csv'
 sarLog = OUTPUT_DIR + 'sar.log'
-sarCsv = OUTPUT_DIR + 'sar-client0.csv'
+sarCsv = OUTPUT_DIR + 'sar.csv'
 sysCsv = OUTPUT_DIR + 'sysConfig.csv'
 
 # Remove old files if present

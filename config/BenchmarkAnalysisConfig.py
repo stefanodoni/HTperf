@@ -13,13 +13,21 @@ NUM_TESTS = 10 # Number of test repetitions, usually 10 (i.e. number of growing 
 #         "Fixed maximum frequencies: 800MHz, 1200MHz, 1600MHz, 2000MHz and 2900MHz\n" \
 #         "Linear Regressions consider first " + str(NUM_SAMPLES) + " samples"
 
-TITLE = "RUBBoS Benchmark\n" \
+# TITLE = "RUBBoS Benchmark\n" \
+#         "Linear Regression consider first " + str(NUM_SAMPLES) + " samples"
+
+TITLE = "CBench Benchmark\n" \
         "Linear Regression consider first " + str(NUM_SAMPLES) + " samples"
+
+# TITLE = "SPECpower\_ssj2008 v1.10 Benchmark\n" \
+#         "Linear Regression consider first " + str(NUM_SAMPLES) + " samples"
 
 # Runs to be considered in computing real IPC
 START_RUN = 1
 END_RUN = 10
 
 # Value added to x_max to plot streched line
-X_MAX_PADDING = 100
+X_MAX_PADDING = 50 # CBench
+# X_MAX_PADDING = 100 # Rubbos
+# X_MAX_PADDING = 20000 # SPECpower
 

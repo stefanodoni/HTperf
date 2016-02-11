@@ -1,8 +1,8 @@
 __author__ = 'francesco'
 
 DB_NAME = "htperf.db"
-RUBBOS_DETAILED_TABLE = "rubbos_detailed"
-RUBBOS_TABLE = "rubbos"
+BENCHMARK_DETAILED_TABLE = "benchmark_detailed"
+BENCHMARK_TABLE = "benchmark"
 SAR_TABLE = "sar"
 PCM_TABLE = "pcm"
 PERF_TABLE = "perf"

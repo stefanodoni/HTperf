@@ -7,11 +7,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from database import DBConstants
-from datasets.RUBBoSDataset import RUBBoSDataset
+from datasets.BenchmarkDataset import BenchmarkDataset
 from graph_plotters.HTModelPlotter import HTModelPlotter
 from parsers.SarParser import SarParser
 from parsers.PCMParser import PCMParser
-from parsers.RUBBoSParser import RUBBoSParser
+from parsers.BenchmarkParser import BenchmarkParser
 from parsers.PerfParser import PerfParser
 from parsers.SysConfigParser import SysConfigParser
 from statistics.HTLinearModel import HTLinearModel
@@ -42,9 +42,9 @@ test_names = [name for name in os.listdir(path_to_tests) if not os.path.isfile(p
 test_names.sort()
 test_numbers = [i + 1 for i in range(len(test_names))]
 
-# rubbos_detailed_file = "/rubbos-detailed.csv"
-rubbos_file = "/rubbos.csv"
-sar_file = "/sar-client0.csv"
+# benchmark_detailed_file = "/benchmark-detailed.csv"
+benchmark_file = "/benchmark.csv"
+sar_file = "/sar.csv"
 pcm_file = "/pcm.csv"
 perf_file = "/perf.csv"
 sysconfig_file = "/sysConfig.csv"
@@ -55,12 +55,12 @@ for test in test_names:
 
 # Data structures
 system_config = {}
-rubbos_dataframes = {}
+benchmark_dataframes = {}
 sar_dataframes = {}
 pcm_dataframes = {}
 perf_dataframes = {}
 
-rubbos_datasets = {}
+benchmark_datasets = {}
 
 ht_linear_models = {}
 
@@ -74,8 +74,8 @@ else:
     my_sut_config.set_manual()
 
 for test in test_names:
-    # rubbos_detailed_dataframe = RUBBoSParser().parse(rubbos_detailed_file, "detailed") # Only if using the detailed version of rubbos report file
-    rubbos_dataframes[test] = RUBBoSParser().parse(path_to_tests + '/' + test + rubbos_file)
+    # benchmark_detailed_dataframe = BenchmarkParser().parse(benchmark_detailed_file, "detailed") # Only if using the detailed version of benchmark report file
+    benchmark_dataframes[test] = BenchmarkParser().parse(path_to_tests + '/' + test + benchmark_file)
     sar_dataframes[test] = SarParser().parse(path_to_tests + '/' + test + sar_file)
     perf_dataframes[test] = PerfParser().parse(path_to_tests + '/' + test + perf_file)
 
@@ -88,8 +88,8 @@ conn = sqlite3.connect(DBConstants.DB_NAME)
 c = conn.cursor()
 
 for test in test_names:
-    #rubbos_detailed_dataframe.to_sql(DBConstants.RUBBOS_DETAILED_TABLE, conn)
-    rubbos_dataframes[test].to_sql(DBConstants.RUBBOS_TABLE, conn, if_exists='append')
+    #benchmark_detailed_dataframe.to_sql(DBConstants.BENCHMARK_DETAILED_TABLE, conn)
+    benchmark_dataframes[test].to_sql(DBConstants.BENCHMARK_TABLE, conn, if_exists='append')
     sar_dataframes[test].to_sql(DBConstants.SAR_TABLE, conn, if_exists='append')
     perf_dataframes[test].to_sql(DBConstants.PERF_TABLE, conn, if_exists='append')
 
@@ -98,7 +98,7 @@ for test in test_names:
 
 conn.commit()
 
-# c.execute("DROP TABLE IF EXISTS " + DBConstants.RUBBOS_DETAILED_TABLE)
+# c.execute("DROP TABLE IF EXISTS " + DBConstants.BENCHMARK_DETAILED_TABLE)
 
 # Query to show table fields: PRAGMA table_info(tablename)
 # for row in c.execute("PRAGMA table_info(perf)"):
@@ -110,26 +110,26 @@ conn.commit()
 # c.execute("SELECT * FROM prova")
 # print(c.fetchone())
 
-#print(pd.read_sql_query("SELECT * FROM " + DBConstants.RUBBOS_TABLE, conn))
-#print(pd.read_sql_query("SELECT * FROM rubbos WHERE \"Timestamp Start\" < \"2015-10-11 08:14:18\"", conn))
+#print(pd.read_sql_query("SELECT * FROM " + DBConstants.BENCHMARK_TABLE, conn))
+#print(pd.read_sql_query("SELECT * FROM benchmark WHERE \"Timestamp Start\" < \"2015-10-11 08:14:18\"", conn))
 
 # c.execute("DROP TABLE IF EXISTS prova")
 # c.execute("CREATE TABLE prova (c1, c2, asd TEXT)")
 # c.execute("INSERT INTO prova VALUES (5,3,4)")
 
 for test in test_names:
-    rubbos_datasets[test] = RUBBoSDataset().create(rubbos_dataframes[test], conn, OUTPUT_DIR, test, using_pcm)
+    benchmark_datasets[test] = BenchmarkDataset().create(benchmark_dataframes[test], conn, OUTPUT_DIR, test, using_pcm)
 
 conn.close()
 
 # Alternative to sqlite3: SQLAlchemy in order to use pd.read_sql_table
 #engine = sqlal.create_engine('sqlite:///htperf.db')
-#print(pd.read_sql_table('rubbos', engine))
-#print(pd.read_sql_query("SELECT * FROM rubbos WHERE \"Timestamp Start\" <= \"2015-10-11 08:14:18\"", engine))
+#print(pd.read_sql_table('benchmark', engine))
+#print(pd.read_sql_query("SELECT * FROM benchmark WHERE \"Timestamp Start\" <= \"2015-10-11 08:14:18\"", engine))
 
 # ======================= STATISTICS =====================================
 for test in test_names:
-    ht_linear_models[test] = HTLinearModel().estimate(rubbos_datasets[test], OUTPUT_DIR, test, my_sut_config)
+    ht_linear_models[test] = HTLinearModel().estimate(benchmark_datasets[test], OUTPUT_DIR, test, my_sut_config)
 
 # ======================= PLOT GRAPHS =====================================
 # cmap = plt.get_cmap('gnuplot')
@@ -149,22 +149,22 @@ colors = ['#281D46', '#504FAF', '#088DA5', '#FE9900', '#E12727']
 # plotter = HTModelPlotter().init(OUTPUT_DIR, 3, [0])
 # # First plot scatter and standard points in order to determinate the maximum X value
 # for test, color in zip(test_names, colors):
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', None, False, 0, 100)
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', None, True, 0, 100)
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, None, False, 0, 100)
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['RavgTot'], 0, 1, color, test + '\nTot Avg Response Time (ms)')
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], benchmark_datasets[test]['runs']['UavgTot'], 0, 0, 'green', None, False, 0, 100)
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', None, True, 0, 100)
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, None, False, 0, 100)
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], benchmark_datasets[test]['runs']['RavgTot'], 0, 1, color, test + '\nTot Avg Response Time (ms)')
 #
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, None, True, 0, 100)
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, None, True, 0, 100)
 #
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 2, 0, color, test + '\nTot Avg Thread Density', False, 1, 2)
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 2, 0, color, test + '\nTot Avg Thread Density', False, 1, 2)
 #
 # # Then use the x_max value to print the lr lines
 # for test, color in zip(test_names, colors):
-#     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['UavgTot'], 0, 0, 'green', test + '\nTot Avg Utilization (Benchmark) LR', False, 0, 100)
-#     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', test + '\nTot Avg Core Busy Time (C0 state) LR', True, 0, 100)
-#     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, 0, 100)
+#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], benchmark_datasets[test]['runs']['UavgTot'], 0, 0, 'green', test + '\nTot Avg Utilization (Benchmark) LR', False, 0, 100)
+#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', test + '\nTot Avg Core Busy Time (C0 state) LR', True, 0, 100)
+#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, 0, 100)
 #
-#     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, test + '\nC0 Productivity LR', True, 0, 100)
+#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, test + '\nC0 Productivity LR', True, 0, 100)
 #
 # plotter.gen_graph("All-vs-X", bac.TITLE,
 #                   {0: 'System Throughput', 1: 'System Throughput', 2: 'System Throughput'},
@@ -174,23 +174,22 @@ colors = ['#281D46', '#504FAF', '#088DA5', '#FE9900', '#E12727']
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
 for test, color in zip(test_names, colors):
-    plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, None, False, 0, 100)
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, None, False, 0, 100)
 
 # Then use the x_max value to print the lr lines
 for test, color in zip(test_names, colors):
-    plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, 0, 100)
+    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, 0, 100)
 
 plotter.gen_graph("U-vs-X", bac.TITLE, {0: 'System Throughput'}, {0: 'CPU Traditional Utilization'})
-
 
 # plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # # First plot scatter and standard points in order to determinate the maximum X value
 # for test, color in zip(test_names, colors):
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, None, True, 0, 100)
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, None, True, 0, 100)
 #
 # # Then use the x_max value to print the lr lines
 # for test, color in zip(test_names, colors):
-#     plotter.plot_lin_regr(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, test + '\nC0 Productivity LR', True, 0, 100)
+#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, test + '\nC0 Productivity LR', True, 0, 100)
 #
 # plotter.gen_graph("P-vs-X", bac.TITLE, {0: 'System Throughput'}, {0: 'CPU Productivity'})
 
@@ -198,50 +197,7 @@ plotter.gen_graph("U-vs-X", bac.TITLE, {0: 'System Throughput'}, {0: 'CPU Tradit
 # plotter = HTModelPlotter().init(OUTPUT_DIR, 2)
 # # First plot scatter and standard points in order to determinate the maximum X value
 # for test, color in zip(test_names, colors):
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], rubbos_datasets[test]['runs']['RavgTot'], 0, 0, color, test + '\nTot Avg Response Time (ms)')
-#     plotter.plot_scatter(rubbos_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 1, 0, color, test + '\nTot Avg Thread Density', False, 1, 2)
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], benchmark_datasets[test]['runs']['RavgTot'], 0, 0, color, test + '\nTot Avg Response Time (ms)')
+#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 1, 0, color, test + '\nTot Avg Thread Density', False, 1, 2)
 #
 # plotter.gen_graph("R,atd-vs-X", bac.TITLE, {0: 'System Throughput', 1: 'System Throughput'}, {0: 'Tot Avg Response Time (ms)', 1: 'Tot Avg Thread Density'})
-
-
-# TODO: complete this alternative method to print graphs
-# matches = [
-#     {"graph": "scatter+lin_regr", "X": "XavgTot", "y": "Sys_mean_utilization"},
-#     {"graph": "scatter+lin_regr", "X": "XavgTot", "y": "Sys_mean_productivity"},
-#     {"graph": "scatter", "X": "XavgTot", "y": "Sys_mean_atd"}
-# ]
-#
-# for match in matches:
-#     plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
-#
-#     for test, color in zip(test_names, colors):
-#         if match['X'] == "XavgTot":
-#             X = rubbos_datasets[test]['runs']['XavgTot']
-#
-#         if match['y'] == "Sys_mean_utilization":
-#             y = ht_linear_models[test].Sys_mean_utilization
-#         elif match['y'] == "Sys_mean_productivity":
-#             y = ht_linear_models[test].Sys_mean_productivity
-#         elif match['y'] == "Sys_mean_atd":
-#             y = ht_linear_models[test].Sys_mean_atd
-#
-#         if match['graph'] == "scatter+lin_regr":
-#             plotter.plot_scatter(X, y, 0, 0, color, None, False, True)
-#             plotter.plot_lin_regr(X, y, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, True)
-#         elif match['graph'] == "scatter":
-#             plotter.plot_scatter(X, y, 0, 0, color, None, True, True)
-#
-#         title = ''
-#         for test, num in zip(test_names, test_numbers):
-#             title = title + test + ("\n" if num != test_numbers[-1] else '')
-#
-#         title = title + "\nLinear Regressions considering first " + str(bac.NUM_SAMPLES) + " samples"
-#
-#         title = "RUBBoS Benchmark variable frequencies test\n" \
-#                 "Fixed maximum frequencies: 800MHz, 1200MHz, 1600MHz, 2000MHz and 2900MHz\n" \
-#                 "Linear Regressions consider first " + str(bac.NUM_SAMPLES) + " samples"
-#
-#         plotter.gen_graph(match['X'] + "-vs-" + match['y'], title,
-#                           {0: 'System Throughput'},# 1: 'System Throughput', 2: 'System Throughput'},
-#                           {0: 'CPU Traditional Utilization'})#, 1: 'CPU Productivity'})
-#                           #, {0: 'Response Time'}, 'Productivity', 'Tot Avg Thread Density')

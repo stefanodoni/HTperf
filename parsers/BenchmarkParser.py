@@ -3,7 +3,7 @@ import pandas as pd
 
 __author__ = 'francesco'
 
-class RUBBoSParser (Parser):
+class BenchmarkParser (Parser):
     columns = [Parser.TIMESTAMP_START_STR, Parser.TIMESTAMP_END_STR, 'Run', 'TotClients',
                'XavgTot', 'RavgTot', 'UavgTot', 'DemandCpu']
 
@@ -11,7 +11,7 @@ class RUBBoSParser (Parser):
                         'Xavg', 'Ravg', 'UtilCpu', 'TotClients',
                         'XavgTot', 'RavgTot', 'UavgTot', 'DemandCpu']
 
-    # Pass type = detailed if parsing a detailed RUBBoS report file
+    # Pass type = detailed if parsing a detailed benchmark report file
     def parse(self, file, type=None):
         csvfile = open(file, 'rb')
         dataframe = pd.read_csv(csvfile, sep=';', header=None, skiprows=1,
