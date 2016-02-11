@@ -1,18 +1,11 @@
 #!/usr/bin/python3.4
-import os
 import argparse
 import sqlite3
-import sqlalchemy as sqlal
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from database import DBConstants
 from datasets.LiveReportDataset import LiveReportDataset
-from graph_plotters.HTModelPlotter import HTModelPlotter
 from parsers.Parser import Parser
 from parsers.SarParser import SarParser
-from parsers.PCMParser import PCMParser
-from parsers.BenchmarkParser import BenchmarkParser
 from parsers.PerfParser import PerfParser
 from parsers.SysConfigParser import SysConfigParser
 from statistics.LiveHTLinearModel import LiveHTLinearModel
@@ -122,13 +115,6 @@ for i in range(0,len(live_report_datasets)):
 
     model.Ci_frequency = model.compute_mean_frequencies(live_report_datasets[i])
     model.Sys_mean_frequency = model.compute_sys_mean_frequency(model.Ci_frequency)
-
-    # Export csv file with plotted data
-    # model.gen_csv(live_report_datasets[i], model.linear_model, model.Ci_IPC_max_td_max,
-    #              model.Ci_instr, model.Ci_instr_max,
-    #              model.Sys_mean_productivity, model.Sys_mean_atd, model.Sys_mean_cbt, model.Sys_mean_utilization,
-    #              model.Sys_mean_frequency, model.Sys_mean_IPC_td_max, self.Sys_mean_estimated_IPC)
-
 
     print('{:>20}\t{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
         str(live_report_datasets[i]['sar-stats']['mean'][Parser.TIMESTAMP_START_STR][0]),
