@@ -2,13 +2,17 @@
 A framework composed by two tools:
  - LaunchCollectors.py automates the collection of performance data using ocperf and sar.
  - Main.py automates the parsing, selection, aggregation and plotting processes of data from csv files reported by tools like Sar, PCM, perf and benchmarks like RUBBoS and SPECpower.
+ - Main-live.py works as Main.py, but it accept just one sar and one perf report files, that are analised using the desired interval. It outputs results to stdout.
 
 ## Usage
+### LaunchCollectors.py
 Execute LaunchCollectors.py passing as arguments the Sar Interval and Count parameters, the ocperf directory and the output directory.
 ```sh
 $ ./LaunchCollectors.py interval count /path/to/pmu-tools /path/to/output/dir
 ```
 
+### Main.py
+Change the BenchmarkAnalysisConfig.py file constants accordingly to your desired configuration (depending on benchmark and output parameters).
 Execute main.py passing as arguments the path of directory containing the reports of each test under consideration and the output directory.
 Each reporting directory must contains these csv files:
 
@@ -27,6 +31,26 @@ Optional parameters are:
 
 ```sh
 $ ./main.py /path/to/report/dir /path/to/output/dir -sysconfig -pcm
+```
+
+### Main-live.py
+Change the BenchmarkAnalysisConfig.py file constants accordingly to your desired configuration (depending on output parameters).
+Execute main-live.py passing as arguments the path of directory containing the report files and the desired interval
+Files to be placed in the report directory are:
+
+ - perf.csv: report of perf tool
+ - sar.csv: report of sar tool
+
+```sh
+$ ./main-live.py /path/to/report/dir interval
+```
+
+Optional parameters are:
+
+ - -sysconfig: parse the single sysConfig.csv file placed in the root of reports directory
+
+```sh
+$ ./main.py /path/to/report/dir interval -sysconfig
 ```
 
 ## Benchmark report file structure

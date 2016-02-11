@@ -44,36 +44,47 @@ class StatsGenerator:
         for start, end in zip(startTS, endTS):
             # Extract dataframe
             df = pd.read_sql_query("SELECT * "
-                              "FROM " + table + " "
-                              "WHERE " + Parser.TIMESTAMP_STR + " >= '" + str(start) + "' " +
-                              "AND " + Parser.TIMESTAMP_STR + " <= '" + str(end) + "' ", DBconn)
+                                   "FROM " + table + " "
+                                                     "WHERE " + Parser.TIMESTAMP_STR + " >= '" + str(start) + "' " +
+                                   "AND " + Parser.TIMESTAMP_STR + " <= '" + str(end) + "' ", DBconn)
 
             df.drop(['index', Parser.TIMESTAMP_STR], axis=1, inplace=True) # Remove first two cols, unused in stats
 
             # Replace negative values with NaN, for statistical purpose
             df[df < 0] = np.nan
 
-            # Divide all values by the perf measurement interval
-            if normalize_perf:
-                df = df.div(interval)
+            if len(df) > 0: # Query returned more than zero rows
+                # Divide all values by the perf measurement interval
+                if normalize_perf:
+                    df = df.div(interval)
 
-            # Calculate mean of columns
-            mean = df.mean().reset_index().T
-            mean.columns = mycolumns
+                # Calculate mean of columns
+                mean = df.mean().reset_index().T
+                mean.columns = mycolumns
 
-            tmp_mean = tmp_mean.append(mean[1:])
+                tmp_mean = tmp_mean.append(mean[1:])
 
-            # Calculate std of columns
-            std = df.std().reset_index().T
-            std.columns = mycolumns
+                # Calculate std of columns
+                std = df.std().reset_index().T
+                std.columns = mycolumns
 
-            tmp_std = tmp_std.append(std[1:])
+                tmp_std = tmp_std.append(std[1:])
 
-            # Calculate max of columns
-            max = df.max().reset_index().T
-            max.columns = mycolumns
+                # Calculate max of columns
+                max = df.max().reset_index().T
+                max.columns = mycolumns
 
-            tmp_max = tmp_max.append(max[1:])
+                tmp_max = tmp_max.append(max[1:])
+            else:
+                # Set all dataframes to zero
+                mean = pd.DataFrame(data=np.zeros((0,len(mycolumns))), columns=mycolumns)
+                tmp_mean = tmp_mean.append(mean)
+
+                std = pd.DataFrame(data=np.zeros((0,len(mycolumns))),columns=mycolumns)
+                tmp_std = tmp_std.append(std)
+
+                max = pd.DataFrame(data=np.zeros((0,len(mycolumns))),columns=mycolumns)
+                tmp_max = tmp_max.append(max)
 
         # Move index as column and drop it in order to have default integer index
         tmp_mean.reset_index(inplace=True)
