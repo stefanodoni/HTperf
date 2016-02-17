@@ -23,7 +23,9 @@ class SUTConfig:
     # Set parameters using the input config file
     def set(self, system_config):
         # PROCESSOR SETTINGS
-        if system_config['Model'] == 42 or system_config['Model'] == 45 or system_config['Model'] == 58:
+        if system_config['Model'] == 60 or system_config['Model'] == 63 or system_config['Model'] == 69 or system_config['Model'] == 70:
+            self.CPU_BUS_CLOCK_FREQUENCY = 100000000 # BCLK for Intel Haswell Architecture (model number 0x3c = 60, 0x3f = 63, 0x45 = 69 or 0x46 = 70)
+        elif system_config['Model'] == 42 or system_config['Model'] == 45 or system_config['Model'] == 58:
             self.CPU_BUS_CLOCK_FREQUENCY = 100000000 # BCLK for Intel SandyBridge (model number 0x2a = 42 or 0x2d = 45) and IvyBridge (0x3a = 58) Architecture
         elif system_config['Model'] == 26 or system_config['Model'] == 30 or system_config['Model'] == 46:
             self.CPU_BUS_CLOCK_FREQUENCY = 133330000 # BCLK for Nehalem Architecture (model number 0x1a = 26 or 0x1e = 30 or 0x2e = 46)
