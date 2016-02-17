@@ -81,12 +81,8 @@ class SUTConfig:
                 self.CPU_SOCKET_TO_PHYSICAL_CORES_MAPPING['S' + str(socket_num)].append(cpu_couple[0])
 
         if self.CPU_HT_ACTIVE:
-            for core_num in range(int(self.CPU_PHYSICAL_CORES)):
-                self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(core_num)] = []
-                for cpu_couple in siblings_cpus:
-                    if int(cpu_couple[0]) == core_num:
-                        self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(core_num)].append(cpu_couple[0])
-                        self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(core_num)].append(cpu_couple[2])
+            for core_num, cpu_couple in zip(range(int(self.CPU_PHYSICAL_CORES)), siblings_cpus):
+                self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(core_num)] = [cpu_couple[0], cpu_couple[2]]
         else:
             for core_num in range(int(self.CPU_PHYSICAL_CORES)):
                 self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(core_num)] = [core_num]
