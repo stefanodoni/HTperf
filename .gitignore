@@ -2,6 +2,7 @@
 *.db
 .*
 *~
+/samples
 /data_collection/*.csv
 /data_collection/*.log
 !/.gitignore
