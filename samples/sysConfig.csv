@@ -1,0 +1,16 @@
+ModelName;Intel(R) Core(TM) i7-3537U CPU @ 2.00GHz;
+Model;58;
+Sockets;1;
+CoresPerSocket;2;
+ThreadsPerCore;2;
+Siblings;0-2 1-3 ;
+OnlineCPUs;4;
+BaseFrequency;2.00;
+BaseOperatingRatio;25;
+CPUMaxMHz;3100.0000;
+TurboBoost;0;
+TurboRatioLimit1Core;31;
+TurboRatioLimit2Cores;29;
+TurboRatioLimit3Cores;29;
+TurboRatioLimit4Cores;29;
+Governor;powersave;
