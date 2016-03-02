@@ -71,16 +71,16 @@ class HTLinearModel:
 
             self.linear_model = self.estimate_IPCs(self.Ci_unhalted_clk_td1, self.Ci_instr, self.Ci_unhalted_clk_td2)
 
-        # print(Ci_unhalted_clk_td2['S0-C0'])
-        # print(Ci_unhalted_clk_td2)
-        # print(self.Ci_instr['S0-C0'])
+        # print(self.Ci_unhalted_clk_td2)
+        # print(self.Ci_unhalted_clk_td1)
+        # print(self.Ci_instr)
+        # print(self.linear_model)
 
         self.Ci_instr_max = self.compute_instr_max(self.linear_model)
         self.Ci_productivity = self.compute_productivity(self.Ci_instr, self.Ci_instr_max)
         self.Sys_mean_productivity = self.compute_sys_mean_productivity(self.Ci_productivity)
 
-        # print(self.linear_model['S0-C0'])
-        # print(self.Ci_instr_max['S0-C0'])
+        # print(self.Ci_instr_max)
         # print(self.Ci_productivity)
         # print(self.Sys_mean_productivity)
 
@@ -173,14 +173,14 @@ class HTLinearModel:
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 # y = one element per row [Ci_istr]
-                y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)])
+                y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])
                 y = y.reshape(len(y), 1)
 
                 if Ci_unhalted_clk_td2 == None:
-                    X = [[i] for i in Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)]]
+                    X = [[i] for i in Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES]]
                 else:
                     # X = two elems per row [Ci_unhalted_clk_td1, Ci_unhalted_clk_td2]
-                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)], Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)])]
+                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES], Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])]
 
                 regr = lm.LinearRegression(fit_intercept=False) # fit_intercept=False is equivalent to "+ 0" in R
                 regr.fit(X, y)
