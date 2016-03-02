@@ -109,14 +109,14 @@ class LiveHTLinearModel:
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 # y = one element per row [Ci_istr]
-                y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)])
+                y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])
                 y = y.reshape(len(y), 1)
 
                 if Ci_unhalted_clk_td2 == None:
-                    X = [[i] for i in Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)]]
+                    X = [[i] for i in Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES]]
                 else:
                     # X = two elems per row [Ci_unhalted_clk_td1, Ci_unhalted_clk_td2]
-                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)], Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)])]
+                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES], Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])]
 
                 regr = lm.LinearRegression(fit_intercept=False) # fit_intercept=False is equivalent to "+ 0" in R
                 regr.fit(X, y)
