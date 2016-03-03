@@ -53,6 +53,9 @@ sysconfig_file = "/sysConfig.csv"
 for test in test_names:
     os.makedirs(os.path.dirname(OUTPUT_DIR + test + '/'), exist_ok=True)
 
+# Create DB file and empty it
+open(DBConstants.DB_NAME, 'w').close()
+
 # Data structures
 system_config = {}
 benchmark_dataframes = {}
@@ -83,7 +86,6 @@ for test in test_names:
         pcm_dataframes[test] = PCMParser().parse(path_to_tests + '/' + test + pcm_file)
 
 # ======================= PERSIST DATA IN SQLITE ====================
-os.remove(DBConstants.DB_NAME) # Remove DB file and reconstruct it
 conn = sqlite3.connect(DBConstants.DB_NAME)
 c = conn.cursor()
 
