@@ -104,20 +104,27 @@ class LiveHTLinearModel:
         return result
 
     # For each Socket and for each Core i in Socket, compute IPC_td1 and IPC_td2 with Multivariate Linear Regression
-    def estimate_IPCs(self, Ci_unhalted_clk_td1, Ci_instr, Ci_unhalted_clk_td2=None):
+    # Uses the data of previous interval in order to have a minimal dataset
+    def estimate_IPCs(self, Ci_unhalted_clk_td1_previous, Ci_instr_previous, Ci_unhalted_clk_td1_current, Ci_instr_current,
+                      Ci_unhalted_clk_td2_previous=None, Ci_unhalted_clk_td2_current=None):
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 # y = one element per row [Ci_istr]
-                y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])
+                y = np.array(Ci_instr_previous['S' + str(s) + '-C' + str(c)])
+                y = np.append(y, Ci_instr_current['S' + str(s) + '-C' + str(c)])
                 y = y.reshape(len(y), 1)
 
-                if Ci_unhalted_clk_td2 == None:
-                    X = [[i] for i in Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES]]
+                if Ci_unhalted_clk_td2_previous == None and Ci_unhalted_clk_td2_current == None:
+                    X = [[i] for i in Ci_unhalted_clk_td1_previous['S' + str(s) + '-C' + str(c)]]
+                    X = X.extend([i] for i in Ci_unhalted_clk_td1_current['S' + str(s) + '-C' + str(c)])
                 else:
                     # X = two elems per row [Ci_unhalted_clk_td1, Ci_unhalted_clk_td2]
-                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES], Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])]
+                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1_previous['S' + str(s) + '-C' + str(c)], Ci_unhalted_clk_td2_previous['S' + str(s) + '-C' + str(c)])]
+                    X.extend([i, j] for i, j in zip(Ci_unhalted_clk_td1_current['S' + str(s) + '-C' + str(c)], Ci_unhalted_clk_td2_current['S' + str(s) + '-C' + str(c)]))
 
+                # print(X)
+                # print(y)
                 regr = lm.LinearRegression(fit_intercept=False) # fit_intercept=False is equivalent to "+ 0" in R
                 regr.fit(X, y)
                 result['S' + str(s) + '-C' + str(c)] = {'model' : regr, 'coefficients': regr.coef_}

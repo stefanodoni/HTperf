@@ -11,6 +11,7 @@ from parsers.SysConfigParser import SysConfigParser
 from statistics.LiveHTLinearModel import LiveHTLinearModel
 from config.SUTConfig import SUTConfig
 import config.BenchmarkAnalysisConfig as bac
+import sys
 
 __author__ = 'francesco'
 
@@ -68,9 +69,8 @@ conn.close()
 
 # ======================= STATISTICS =====================================
 
-print('{:>20}\t{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
+print('{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
     Parser.TIMESTAMP_START_STR,
-    Parser.TIMESTAMP_END_STR,
     "Sys Mean Forecasted IPC_TD1",
     "Sys Mean Forecasted IPC_TD2",
     "S0-C0 Instructions_max",
@@ -79,53 +79,59 @@ print('{:>20}\t{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'
     "Sys Avg Thread Density",
     "Sys Mean Frequency"
     ))
+
+models = {}
+# Compute only Ci_unhalted_clk_td2, Ci_unhalted_clk_td1 and Ci_instr of first element and skip the remaining
+# For i > 1 do the linear regression using current element and previous one
 for i in range(0,len(live_report_datasets)):
-    model = LiveHTLinearModel().init(my_sut_config)
+    models[i] = LiveHTLinearModel().init(my_sut_config)
 
-    if not model.my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
-        model.Ci_unhalted_clk_td1 = model.compute_td1(live_report_datasets[i])
-        model.Ci_instr = model.compute_instr(live_report_datasets[i])
+    if not models[i].my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
+        models[i].Ci_unhalted_clk_td1 = models[i].compute_td1(live_report_datasets[i])
+        models[i].Ci_instr = models[i].compute_instr(live_report_datasets[i])
 
-        model.linear_model = model.estimate_IPCs(model.Ci_unhalted_clk_td1, model.Ci_instr)
+        if i != 0:
+            models[i].linear_model = models[i].estimate_IPCs(models[i-1].Ci_unhalted_clk_td1, models[i-1].Ci_instr, models[i].Ci_unhalted_clk_td1, models[i].Ci_instr)
     else : # Hyperthreading ON
-        model.Ci_unhalted_clk_td2 = model.compute_td2(live_report_datasets[i])
-        model.Ci_unhalted_clk_td1 = model.compute_td1(live_report_datasets[i], model.Ci_unhalted_clk_td2)
-        model.Ci_instr = model.compute_instr(live_report_datasets[i])
+        models[i].Ci_unhalted_clk_td2 = models[i].compute_td2(live_report_datasets[i])
+        models[i].Ci_unhalted_clk_td1 = models[i].compute_td1(live_report_datasets[i], models[i].Ci_unhalted_clk_td2)
+        models[i].Ci_instr = models[i].compute_instr(live_report_datasets[i])
 
-        model.linear_model = model.estimate_IPCs(model.Ci_unhalted_clk_td1, model.Ci_instr, model.Ci_unhalted_clk_td2)
+        if i != 0:
+            models[i].linear_model = models[i].estimate_IPCs(models[i-1].Ci_unhalted_clk_td1, models[i-1].Ci_instr, models[i].Ci_unhalted_clk_td1, models[i].Ci_instr, models[i-1].Ci_unhalted_clk_td2, models[i].Ci_unhalted_clk_td2)
 
-    model.Ci_instr_max = model.compute_instr_max(model.linear_model)
-    model.Ci_productivity = model.compute_productivity(model.Ci_instr, model.Ci_instr_max)
-    model.Sys_mean_productivity = model.compute_sys_mean_productivity(model.Ci_productivity)
+    if i != 0:
+        models[i].Ci_instr_max = models[i].compute_instr_max(models[i].linear_model)
+        models[i].Ci_productivity = models[i].compute_productivity(models[i].Ci_instr, models[i].Ci_instr_max)
+        models[i].Sys_mean_productivity = models[i].compute_sys_mean_productivity(models[i].Ci_productivity)
 
-    model.Ci_IPC_max_td_max = model.compute_IPC_at_run_with_td_max(live_report_datasets[i], bac.START_RUN, bac.END_RUN)
-    model.Sys_mean_IPC_td_max = model.compute_sys_mean_IPC_at_td_max(model.Ci_IPC_max_td_max)
-    model.Sys_mean_estimated_IPC = model.compute_sys_mean_estimated_IPC(model.linear_model)
+        models[i].Ci_IPC_max_td_max = models[i].compute_IPC_at_run_with_td_max(live_report_datasets[i], bac.START_RUN, bac.END_RUN)
+        models[i].Sys_mean_IPC_td_max = models[i].compute_sys_mean_IPC_at_td_max(models[i].Ci_IPC_max_td_max)
+        models[i].Sys_mean_estimated_IPC = models[i].compute_sys_mean_estimated_IPC(models[i].linear_model)
 
-    if not model.my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
-        model.Ci_atd = model.compute_atd(live_report_datasets[i], model.Ci_unhalted_clk_td1)
-    else : # Hyperthreading ON
-        model.Ci_atd = model.compute_atd(live_report_datasets[i], model.Ci_unhalted_clk_td1, model.Ci_unhalted_clk_td2)
+        if not models[i].my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
+            models[i].Ci_atd = models[i].compute_atd(live_report_datasets[i], models[i].Ci_unhalted_clk_td1)
+        else : # Hyperthreading ON
+            models[i].Ci_atd = models[i].compute_atd(live_report_datasets[i], models[i].Ci_unhalted_clk_td1, models[i].Ci_unhalted_clk_td2)
 
-    model.Sys_mean_atd = model.compute_sys_mean_atd(model.Ci_atd)
+        models[i].Sys_mean_atd = models[i].compute_sys_mean_atd(models[i].Ci_atd)
 
-    model.Ci_cbt = model.compute_core_busy_time(live_report_datasets[i])
-    model.Sys_mean_cbt = model.compute_sys_mean_core_busy_time(model.Ci_cbt)
-    model.Sys_mean_utilization = model.compute_sys_mean_utilization(live_report_datasets[i])
+        models[i].Ci_cbt = models[i].compute_core_busy_time(live_report_datasets[i])
+        models[i].Sys_mean_cbt = models[i].compute_sys_mean_core_busy_time(models[i].Ci_cbt)
+        models[i].Sys_mean_utilization = models[i].compute_sys_mean_utilization(live_report_datasets[i])
 
-    model.Ci_frequency = model.compute_mean_frequencies(live_report_datasets[i])
-    model.Sys_mean_frequency = model.compute_sys_mean_frequency(model.Ci_frequency)
+        models[i].Ci_frequency = models[i].compute_mean_frequencies(live_report_datasets[i])
+        models[i].Sys_mean_frequency = models[i].compute_sys_mean_frequency(models[i].Ci_frequency)
 
-    print('{:>20}\t{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
-        str(live_report_datasets[i]['sar-stats']['mean'][Parser.TIMESTAMP_START_STR][0]),
-        str(live_report_datasets[i]['sar-stats']['mean'][Parser.TIMESTAMP_END_STR][0]),
-        # str(model.linear_model['S0-C0']['coefficients'][0][0]),
-        # (str(model.linear_model['S0-C0']['coefficients'][0][1]) if model.my_sut_config.CPU_HT_ACTIVE else "-"),
-        (str(model.Sys_mean_estimated_IPC[0]) if not model.my_sut_config.CPU_HT_ACTIVE else "HT ON"),
-        (str(model.Sys_mean_estimated_IPC[0]) if model.my_sut_config.CPU_HT_ACTIVE else "HT OFF"),
-        (str(model.Ci_instr_max['S0-C0'][0][0]) if not model.my_sut_config.CPU_HT_ACTIVE else str(model.Ci_instr_max['S0-C0'][0][1])),
-        str(model.Sys_mean_productivity[0] * 100),
-        str(model.Sys_mean_utilization[0]),
-        str(model.Sys_mean_atd[0]),
-        str(model.Sys_mean_frequency[0])
-    ))
+        print('{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
+            str(live_report_datasets[i]['sar-stats']['mean'][Parser.TIMESTAMP_START_STR][0]),
+            # str(models[i].linear_model['S0-C0']['coefficients'][0][0]),
+            # (str(models[i].linear_model['S0-C0']['coefficients'][0][1]) if models[i].my_sut_config.CPU_HT_ACTIVE else "-"),
+            (str(models[i].Sys_mean_estimated_IPC[0]) if not models[i].my_sut_config.CPU_HT_ACTIVE else "HT ON"),
+            (str(models[i].Sys_mean_estimated_IPC[0]) if models[i].my_sut_config.CPU_HT_ACTIVE else "HT OFF"),
+            (str(models[i].Ci_instr_max['S0-C0'][0][0]) if not models[i].my_sut_config.CPU_HT_ACTIVE else str(models[i].Ci_instr_max['S0-C0'][0][1])),
+            str(models[i].Sys_mean_productivity[0] * 100),
+            str(models[i].Sys_mean_utilization[0]),
+            str(models[i].Sys_mean_atd[0]),
+            str(models[i].Sys_mean_frequency[0])
+        ))
