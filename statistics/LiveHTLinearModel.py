@@ -58,7 +58,7 @@ class LiveHTLinearModel:
         return self
 
     # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td2
-    def compute_td2(self, dataset):
+    def compute_unhalted_clk_td2(self, dataset):
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
@@ -75,7 +75,7 @@ class LiveHTLinearModel:
         return result
 
     # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td1
-    def compute_td1(self, dataset, Ci_unhalted_clk_td2=None):
+    def compute_unhalted_clk_td1(self, dataset, Ci_unhalted_clk_td2=None):
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):

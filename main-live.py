@@ -87,14 +87,14 @@ for i in range(0,len(live_report_datasets)):
     models[i] = LiveHTLinearModel().init(my_sut_config)
 
     if not models[i].my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
-        models[i].Ci_unhalted_clk_td1 = models[i].compute_td1(live_report_datasets[i])
+        models[i].Ci_unhalted_clk_td1 = models[i].compute_unhalted_clk_td1(live_report_datasets[i])
         models[i].Ci_instr = models[i].compute_instr(live_report_datasets[i])
 
         if i != 0:
             models[i].linear_model = models[i].estimate_IPCs(models[i-1].Ci_unhalted_clk_td1, models[i-1].Ci_instr, models[i].Ci_unhalted_clk_td1, models[i].Ci_instr)
     else : # Hyperthreading ON
-        models[i].Ci_unhalted_clk_td2 = models[i].compute_td2(live_report_datasets[i])
-        models[i].Ci_unhalted_clk_td1 = models[i].compute_td1(live_report_datasets[i], models[i].Ci_unhalted_clk_td2)
+        models[i].Ci_unhalted_clk_td2 = models[i].compute_unhalted_clk_td2(live_report_datasets[i])
+        models[i].Ci_unhalted_clk_td1 = models[i].compute_unhalted_clk_td1(live_report_datasets[i], models[i].Ci_unhalted_clk_td2)
         models[i].Ci_instr = models[i].compute_instr(live_report_datasets[i])
 
         if i != 0:

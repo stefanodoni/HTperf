@@ -11,8 +11,9 @@ class BenchmarkDataset (HTDataset):
 
         # The returned dataset is a dictionary that contains the following fields:
         #   - runs: Pandas DataFrame, contains the benchmark report of each run
-        #   - pcm-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of PCM PCs
-        #   - perf-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of Perf PCs
+        #   - perf-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of Perf data
+        #   - sar-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of Sar data
+        #   - (optional) pcm-stats: Dictionary of Pandas DataFrame, contains the mean, stdev and max of PCM PCs
         mydataset = {}
         mydataset['runs'] = dataframe.copy()
 

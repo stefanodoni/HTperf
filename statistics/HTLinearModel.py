@@ -60,13 +60,13 @@ class HTLinearModel:
         self.my_sut_config = my_sut_config
 
         if not self.my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
-            self.Ci_unhalted_clk_td1 = self.compute_td1(dataset)
+            self.Ci_unhalted_clk_td1 = self.compute_unhalted_clk_td1(dataset)
             self.Ci_instr = self.compute_instr(dataset)
 
             self.linear_model = self.estimate_IPCs(self.Ci_unhalted_clk_td1, self.Ci_instr)
         else : # Hyperthreading ON
-            self.Ci_unhalted_clk_td2 = self.compute_td2(dataset)
-            self.Ci_unhalted_clk_td1 = self.compute_td1(dataset, self.Ci_unhalted_clk_td2)
+            self.Ci_unhalted_clk_td2 = self.compute_unhalted_clk_td2(dataset)
+            self.Ci_unhalted_clk_td1 = self.compute_unhalted_clk_td1(dataset, self.Ci_unhalted_clk_td2)
             self.Ci_instr = self.compute_instr(dataset)
 
             self.linear_model = self.estimate_IPCs(self.Ci_unhalted_clk_td1, self.Ci_instr, self.Ci_unhalted_clk_td2)
@@ -122,7 +122,7 @@ class HTLinearModel:
         return self # In order to chain estimate() with class constructor
 
     # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td2
-    def compute_td2(self, dataset):
+    def compute_unhalted_clk_td2(self, dataset):
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
@@ -139,7 +139,7 @@ class HTLinearModel:
         return result
 
     # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td1
-    def compute_td1(self, dataset, Ci_unhalted_clk_td2=None):
+    def compute_unhalted_clk_td1(self, dataset, Ci_unhalted_clk_td2=None):
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):

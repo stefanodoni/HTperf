@@ -46,11 +46,16 @@ class HTModelPlotter:
         return self
 
     # Plot scatter X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_scatter(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, percentual=False, y_axis_min=None, y_axis_max=None):
-        X = X_dataset.reshape(len(X_dataset), 1)
+    def plot_scatter(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None):
+        if percentual_X:
+            X = X_dataset * 100
+        else:
+            X = X_dataset
+
+        X = X.reshape(len(X), 1)
         self.x_max = np.amax(X) if self.x_max < np.amax(X) else self.x_max # Update the x_max with the highes X value
 
-        if percentual:
+        if percentual_y:
             y = y_dataset * 100
         else:
             y = y_dataset
@@ -94,11 +99,16 @@ class HTModelPlotter:
             self.scatter_labels.append(label)
 
     # Standard plot X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_standard(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, style='', percentual=False, y_axis_min=None, y_axis_max=None):
-        X = X_dataset.reshape(len(X_dataset), 1)
+    def plot_standard(self, X_dataset, y_dataset, X_axis, y_axis, color, label=None, style='', percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None):
+        if percentual_X:
+            X = X_dataset * 100
+        else:
+            X = X_dataset
+
+        X = X.reshape(len(X), 1)
         self.x_max = np.amax(X) if self.x_max < np.amax(X) else self.x_max # Update the x_max with the highes X value
 
-        if percentual:
+        if percentual_y:
             y = y_dataset * 100
         else:
             y = y_dataset
@@ -141,13 +151,18 @@ class HTModelPlotter:
             self.plots.append(tmp_plot)
 
     # Plot Linear Regression of X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual=False, y_axis_min=None, y_axis_max=None):
-        X = X_dataset.reshape(len(X_dataset), 1)
+    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None):
+        if percentual_X:
+            X = X_dataset * 100
+        else:
+            X = X_dataset
+
+        X = X.reshape(len(X), 1)
         X_lr = X.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
         X_line = [[i] for i in range(0, self.x_max + bac.X_MAX_PADDING)] # Used to plot streched estimated line
 
-        if percentual:
+        if percentual_y:
             y = y_dataset * 100
         else:
             y = y_dataset
