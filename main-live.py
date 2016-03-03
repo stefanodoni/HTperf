@@ -69,10 +69,10 @@ conn.close()
 
 # ======================= STATISTICS =====================================
 
-print('{:>19}\t{:>28}\t{:>28}\t{:>23}\t{:>20}\t{:>22}\t{:>23}\t{:>26}'.format(
+print('{:>19}\t{:>27}\t{:>27}\t{:>23}\t{:>20}\t{:>22}\t{:>23}\t{:>26}'.format(
     Parser.TIMESTAMP_START_STR,
-    "Sys Mean Forecasted IPC_TD1",
-    "Sys Mean Forecasted IPC_TD2",
+    "Sys Mean Estimated IPC_TD1",
+    "Sys Mean Estimated IPC_TD2",
     "S0-C0 Instructions_max",
     "Sys Productivity",
     "Sys Utilization (Sar)",
@@ -123,12 +123,12 @@ for i in range(0,len(live_report_datasets)):
         models[i].Ci_active_frequency = models[i].compute_mean_active_frequencies(live_report_datasets[i])
         models[i].Sys_mean_active_frequency = models[i].compute_sys_mean_active_frequency(models[i].Ci_active_frequency)
 
-        print('{:>19}\t{:>28}\t{:>28}\t{:>23}\t{:>20}\t{:>22}\t{:>23}\t{:>26}'.format(
+        print('{:>19}\t{:>27}\t{:>27}\t{:>23}\t{:>20}\t{:>22}\t{:>23}\t{:>26}'.format(
             str(live_report_datasets[i]['sar-stats']['mean'][Parser.TIMESTAMP_START_STR][0]),
             # str(models[i].linear_model['S0-C0']['coefficients'][0][0]),
             # (str(models[i].linear_model['S0-C0']['coefficients'][0][1]) if models[i].my_sut_config.CPU_HT_ACTIVE else "-"),
-            (str(models[i].Sys_mean_estimated_IPC[0]) if not models[i].my_sut_config.CPU_HT_ACTIVE else "HT ON"),
-            (str(models[i].Sys_mean_estimated_IPC[0]) if models[i].my_sut_config.CPU_HT_ACTIVE else "HT OFF"),
+            (str(models[i].Sys_mean_estimated_IPC[0]) if not models[i].my_sut_config.CPU_HT_ACTIVE else "HT ON: see IPC_TD2"),
+            (str(models[i].Sys_mean_estimated_IPC[0]) if models[i].my_sut_config.CPU_HT_ACTIVE else "HT OFF: see IPC_TD1"),
             (str(models[i].Ci_instr_max['S0-C0'][0][0]) if not models[i].my_sut_config.CPU_HT_ACTIVE else str(models[i].Ci_instr_max['S0-C0'][0][1])),
             str(models[i].Sys_mean_productivity[0] * 100),
             str(models[i].Sys_mean_utilization[0]),
