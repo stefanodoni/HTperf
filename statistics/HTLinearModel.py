@@ -51,8 +51,8 @@ class HTLinearModel:
     Sys_mean_cbt = {}
     Sys_mean_utilization = pd.Series()
 
-    Ci_frequency = {}
-    Sys_mean_frequency = pd.Series()
+    Ci_active_frequency = {}
+    Sys_mean_active_frequency = pd.Series()
 
     def estimate(self, dataset, output_dir, test_name, my_sut_config):
         self.output_dir = output_dir
@@ -110,14 +110,14 @@ class HTLinearModel:
         # print(self.Sys_mean_cbt)
         # print(self.Sys_mean_utilization)
 
-        self.Ci_frequency = self.compute_mean_frequencies(dataset)
-        self.Sys_mean_frequency = self.compute_sys_mean_frequency(self.Ci_frequency)
+        self.Ci_active_frequency = self.compute_mean_active_frequencies(dataset)
+        self.Sys_mean_active_frequency = self.compute_sys_mean_active_frequency(self.Ci_active_frequency)
 
         # Export csv file with plotted data
         self.gen_csv(dataset, self.linear_model, self.Ci_IPC_max_td_max,
                      self.Ci_instr, self.Ci_instr_max,
                      self.Sys_mean_productivity, self.Sys_mean_atd, self.Sys_mean_cbt, self.Sys_mean_utilization,
-                     self.Sys_mean_frequency, self.Sys_mean_IPC_td_max, self.Sys_mean_estimated_IPC)
+                     self.Sys_mean_active_frequency, self.Sys_mean_IPC_td_max, self.Sys_mean_estimated_IPC)
 
         return self # In order to chain estimate() with class constructor
 
@@ -358,9 +358,9 @@ class HTLinearModel:
         result.name = "Sys_mean_estimated_IPC_TD" + str(2 if self.my_sut_config.CPU_HT_ACTIVE else 1)
         return result
 
-    # Compute the mean frequencies for each core
+    # Compute the mean active frequencies for each core
     # frequency = (cpu_clk_unhalted_thread / cpu_clk_unhalted.ref_tsc) * CPU_BASE_OPERATING_FREQUENCY
-    def compute_mean_frequencies(self, dataset):
+    def compute_mean_active_frequencies(self, dataset):
         result = {}
 
         for s in range(self.my_sut_config.CPU_SOCKETS):
@@ -384,18 +384,18 @@ class HTLinearModel:
 
         return result
 
-    # Compute the system global frequency mean
-    def compute_sys_mean_frequency(self, Ci_frequency):
-        result = pd.Series(name='Sys_mean_FREQ')
+    # Compute the system global mean active frequency
+    def compute_sys_mean_active_frequency(self, Ci_active_frequency):
+        result = pd.Series(name='Sys_mean_AFREQ')
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
-                    result = result.append(Ci_frequency['S' + str(s) + '-C' + str(c)])
+                    result = result.append(Ci_active_frequency['S' + str(s) + '-C' + str(c)])
                 else:
-                    result = result.add(Ci_frequency['S' + str(s) + '-C' + str(c)])
+                    result = result.add(Ci_active_frequency['S' + str(s) + '-C' + str(c)])
 
         result = result / self.my_sut_config.CPU_PHYSICAL_CORES
-        result.name = "Sys_mean_FREQ"
+        result.name = "Sys_mean_AFREQ"
 
         return result
 

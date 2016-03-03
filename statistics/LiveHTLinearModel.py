@@ -49,8 +49,8 @@ class LiveHTLinearModel:
     Sys_mean_cbt = {}
     Sys_mean_utilization = pd.Series()
 
-    Ci_frequency = {}
-    Sys_mean_frequency = pd.Series()
+    Ci_active_frequency = {}
+    Sys_mean_active_frequency = pd.Series()
 
     def init(self, my_sut_config):
         self.my_sut_config = my_sut_config
@@ -301,9 +301,9 @@ class LiveHTLinearModel:
         result.name = "Sys_mean_estimated_IPC_TD" + str(2 if self.my_sut_config.CPU_HT_ACTIVE else 1)
         return result
 
-    # Compute the mean frequencies for each core
+    # Compute the mean active frequencies for each core
     # frequency = (cpu_clk_unhalted_thread / cpu_clk_unhalted.ref_tsc) * CPU_BASE_OPERATING_FREQUENCY
-    def compute_mean_frequencies(self, dataset):
+    def compute_mean_active_frequencies(self, dataset):
         result = {}
 
         for s in range(self.my_sut_config.CPU_SOCKETS):
@@ -327,17 +327,17 @@ class LiveHTLinearModel:
 
         return result
 
-    # Compute the system global frequency mean
-    def compute_sys_mean_frequency(self, Ci_frequency):
-        result = pd.Series(name='Sys_mean_FREQ')
+    # Compute the system global mean active frequency
+    def compute_sys_mean_active_frequency(self, Ci_active_frequency):
+        result = pd.Series(name='Sys_mean_AFREQ')
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
-                    result = result.append(Ci_frequency['S' + str(s) + '-C' + str(c)])
+                    result = result.append(Ci_active_frequency['S' + str(s) + '-C' + str(c)])
                 else:
-                    result = result.add(Ci_frequency['S' + str(s) + '-C' + str(c)])
+                    result = result.add(Ci_active_frequency['S' + str(s) + '-C' + str(c)])
 
         result = result / self.my_sut_config.CPU_PHYSICAL_CORES
-        result.name = "Sys_mean_FREQ"
+        result.name = "Sys_mean_AFREQ"
 
         return result

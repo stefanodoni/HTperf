@@ -69,7 +69,7 @@ conn.close()
 
 # ======================= STATISTICS =====================================
 
-print('{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
+print('{:>19}\t{:>28}\t{:>28}\t{:>23}\t{:>20}\t{:>22}\t{:>23}\t{:>26}'.format(
     Parser.TIMESTAMP_START_STR,
     "Sys Mean Forecasted IPC_TD1",
     "Sys Mean Forecasted IPC_TD2",
@@ -77,7 +77,7 @@ print('{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
     "Sys Productivity",
     "Sys Utilization (Sar)",
     "Sys Avg Thread Density",
-    "Sys Mean Frequency"
+    "Sys Mean Active Frequency"
     ))
 
 models = {}
@@ -120,10 +120,10 @@ for i in range(0,len(live_report_datasets)):
         models[i].Sys_mean_cbt = models[i].compute_sys_mean_core_busy_time(models[i].Ci_cbt)
         models[i].Sys_mean_utilization = models[i].compute_sys_mean_utilization(live_report_datasets[i])
 
-        models[i].Ci_frequency = models[i].compute_mean_frequencies(live_report_datasets[i])
-        models[i].Sys_mean_frequency = models[i].compute_sys_mean_frequency(models[i].Ci_frequency)
+        models[i].Ci_active_frequency = models[i].compute_mean_active_frequencies(live_report_datasets[i])
+        models[i].Sys_mean_active_frequency = models[i].compute_sys_mean_active_frequency(models[i].Ci_active_frequency)
 
-        print('{:>20}\t{:>28}\t{:>28}\t{:>20}\t{:>20}\t{:>20}\t{:>22}\t{:>20}\t'.format(
+        print('{:>19}\t{:>28}\t{:>28}\t{:>23}\t{:>20}\t{:>22}\t{:>23}\t{:>26}'.format(
             str(live_report_datasets[i]['sar-stats']['mean'][Parser.TIMESTAMP_START_STR][0]),
             # str(models[i].linear_model['S0-C0']['coefficients'][0][0]),
             # (str(models[i].linear_model['S0-C0']['coefficients'][0][1]) if models[i].my_sut_config.CPU_HT_ACTIVE else "-"),
@@ -133,5 +133,5 @@ for i in range(0,len(live_report_datasets)):
             str(models[i].Sys_mean_productivity[0] * 100),
             str(models[i].Sys_mean_utilization[0]),
             str(models[i].Sys_mean_atd[0]),
-            str(models[i].Sys_mean_frequency[0])
+            str(models[i].Sys_mean_active_frequency[0])
         ))
