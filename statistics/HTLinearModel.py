@@ -40,8 +40,8 @@ class HTLinearModel:
     Ci_productivity = {}
     Sys_mean_productivity = pd.Series()
 
-    Ci_IPC_max_td_max = {}
-    Sys_mean_IPC_td_max = pd.Series()
+    Ci_real_IPCs = {}
+    Sys_mean_real_IPC = pd.Series()
     Sys_mean_estimated_IPC = pd.Series()
 
     Ci_atd = {}
@@ -84,8 +84,8 @@ class HTLinearModel:
         # print(self.Ci_productivity)
         # print(self.Sys_mean_productivity)
 
-        self.Ci_IPC_max_td_max = self.compute_IPC_at_run_with_td_max(dataset, bac.START_RUN, bac.END_RUN)
-        self.Sys_mean_IPC_td_max = self.compute_sys_mean_IPC_at_td_max(self.Ci_IPC_max_td_max)
+        self.Ci_real_IPCs = self.compute_real_IPCs(dataset, bac.START_RUN, bac.END_RUN)
+        self.Sys_mean_real_IPC = self.compute_sys_mean_real_IPC(self.Ci_real_IPCs)
         self.Sys_mean_estimated_IPC = self.compute_sys_mean_estimated_IPC(self.linear_model)
 
         # print(Ci_max_IPC_td_max)
@@ -114,10 +114,10 @@ class HTLinearModel:
         self.Sys_mean_active_frequency = self.compute_sys_mean_active_frequency(self.Ci_active_frequency)
 
         # Export csv file with plotted data
-        self.gen_csv(dataset, self.linear_model, self.Ci_IPC_max_td_max,
+        self.gen_csv(dataset, self.linear_model, self.Ci_real_IPCs,
                      self.Ci_instr, self.Ci_instr_max,
                      self.Sys_mean_productivity, self.Sys_mean_atd, self.Sys_mean_cbt, self.Sys_mean_utilization,
-                     self.Sys_mean_active_frequency, self.Sys_mean_IPC_td_max, self.Sys_mean_estimated_IPC)
+                     self.Sys_mean_active_frequency, self.Sys_mean_real_IPC, self.Sys_mean_estimated_IPC)
 
         return self # In order to chain estimate() with class constructor
 
@@ -298,8 +298,8 @@ class HTLinearModel:
         result.name = "Sys_mean_utilization"
         return result
 
-    # For each Socket and for each Core i in Socket, calculate real IPC at TD depending on the specified run
-    def compute_IPC_at_run_with_td_max(self, dataset, startRun, endRun):
+    # For each Socket and for each Core i in Socket, calculate real IPC depending on the specified runs
+    def compute_real_IPCs(self, dataset, startRun, endRun):
         startRun = startRun - 1
 
         result = {}
@@ -313,16 +313,15 @@ class HTLinearModel:
                 result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']['mean']))], dtype=float) # Set all to zero
 
                 for i in positions:
+                    tmp_ipcs = {}
                     for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
-                        result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i]
+                        tmp_ipcs['CPU' + str(j)] = dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i] / dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'][i]
 
-                    # Calculate IPC at TD max using unhalted clocks of the first logical core of cpu c
-                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread'][i]
-
+                    result['S' + str(s) + '-C' + str(c)][i] = sum(tmp_ipcs.values()) / self.my_sut_config.CPU_THREADS_PER_CORE
         return result
 
     # Compute the system global mean of Ci_max_IPC_td_max
-    def compute_sys_mean_IPC_at_td_max(self, Ci_IPC_max_td_max):
+    def compute_sys_mean_real_IPC(self, Ci_IPC_max_td_max):
         result = pd.Series(name='Sys_mean_IPC')
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):

@@ -38,8 +38,8 @@ class LiveHTLinearModel:
     Ci_productivity = {}
     Sys_mean_productivity = pd.Series()
 
-    Ci_IPC_max_td_max = {}
-    Sys_mean_IPC_td_max = pd.Series()
+    Ci_real_IPCs = {}
+    Sys_mean_real_IPC = pd.Series()
     Sys_mean_estimated_IPC = pd.Series()
 
     Ci_atd = {}
@@ -241,8 +241,8 @@ class LiveHTLinearModel:
         result.name = "Sys_mean_utilization"
         return result
 
-    # For each Socket and for each Core i in Socket, calculate real IPC at TD depending on the specified run
-    def compute_IPC_at_run_with_td_max(self, dataset, startRun, endRun):
+    # For each Socket and for each Core i in Socket, calculate real IPC depending on the specified runs
+    def compute_real_IPCs(self, dataset, startRun, endRun):
         startRun = startRun - 1
 
         result = {}
@@ -256,16 +256,15 @@ class LiveHTLinearModel:
                 result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']['mean']))], dtype=float) # Set all to zero
 
                 for i in positions:
+                    tmp_ipcs = {}
                     for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
-                        result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i]
+                        tmp_ipcs['CPU' + str(j)] = dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i] / dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'][i]
 
-                    # Calculate IPC at TD max using unhalted clocks of the first logical core of cpu c
-                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread'][i]
-
+                    result['S' + str(s) + '-C' + str(c)][i] = sum(tmp_ipcs.values()) / self.my_sut_config.CPU_THREADS_PER_CORE
         return result
 
     # Compute the system global mean of Ci_max_IPC_td_max
-    def compute_sys_mean_IPC_at_td_max(self, Ci_IPC_max_td_max):
+    def compute_sys_mean_real_IPC(self, Ci_IPC_max_td_max):
         result = pd.Series(name='Sys_mean_IPC')
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):

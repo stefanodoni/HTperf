@@ -105,8 +105,8 @@ for i in range(0,len(live_report_datasets)):
         models[i].Ci_productivity = models[i].compute_productivity(models[i].Ci_instr, models[i].Ci_instr_max)
         models[i].Sys_mean_productivity = models[i].compute_sys_mean_productivity(models[i].Ci_productivity)
 
-        models[i].Ci_IPC_max_td_max = models[i].compute_IPC_at_run_with_td_max(live_report_datasets[i], bac.START_RUN, bac.END_RUN)
-        models[i].Sys_mean_IPC_td_max = models[i].compute_sys_mean_IPC_at_td_max(models[i].Ci_IPC_max_td_max)
+        models[i].Ci_real_IPCs = models[i].compute_real_IPCs(live_report_datasets[i], bac.START_RUN, bac.END_RUN)
+        models[i].Sys_mean_real_IPC = models[i].compute_sys_mean_real_IPC(models[i].Ci_real_IPCs)
         models[i].Sys_mean_estimated_IPC = models[i].compute_sys_mean_estimated_IPC(models[i].linear_model)
 
         if not models[i].my_sut_config.CPU_HT_ACTIVE: # Hyperthreading OFF
