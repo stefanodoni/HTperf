@@ -304,6 +304,8 @@ class HTLinearModel:
         return result
 
     # For each Socket and for each Core i in Socket, calculate real IPC depending on the specified runs
+    # Notice this is IPC relative to physical cores, hence it's computed as:
+    # sum of instr_logical_cores divided by unhalted_clk_cycles_any of first logical core of physical cpu c
     def compute_real_IPCs(self, dataset, startRun, endRun):
         startRun = startRun - 1
 
@@ -318,11 +320,11 @@ class HTLinearModel:
                 result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']['mean']))], dtype=float) # Set all to zero
 
                 for i in positions:
-                    tmp_ipcs = {}
                     for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
-                        tmp_ipcs['CPU' + str(j)] = dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i] / dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'][i]
+                     result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i]
 
-                    result['S' + str(s) + '-C' + str(c)][i] = sum(tmp_ipcs.values()) / self.my_sut_config.CPU_THREADS_PER_CORE
+                    # Calculate IPC using unhalted clocks any of the first logical core of cpu c
+                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'][i]
         return result
 
     # Compute the system global mean of Ci_real_IPCs
