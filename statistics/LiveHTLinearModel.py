@@ -263,18 +263,18 @@ class LiveHTLinearModel:
                     result['S' + str(s) + '-C' + str(c)][i] = sum(tmp_ipcs.values()) / self.my_sut_config.CPU_THREADS_PER_CORE
         return result
 
-    # Compute the system global mean of Ci_max_IPC_td_max
-    def compute_sys_mean_real_IPC(self, Ci_IPC_max_td_max):
-        result = pd.Series(name='Sys_mean_IPC')
+    # Compute the system global mean of Ci_real_IPCs
+    def compute_sys_mean_real_IPC(self, Ci_real_IPCs):
+        result = pd.Series(name='Sys_mean_real_IPC')
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
-                    result = result.append(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
+                    result = result.append(Ci_real_IPCs['S' + str(s) + '-C' + str(c)])
                 else:
-                    result = result.add(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
+                    result = result.add(Ci_real_IPCs['S' + str(s) + '-C' + str(c)])
 
         result = result / self.my_sut_config.CPU_PHYSICAL_CORES
-        result.name = "Sys_mean_IPC"
+        result.name = "Sys_mean_real_IPC"
         return result
 
     # Compute the system global mean of estimated IPC

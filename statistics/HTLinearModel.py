@@ -172,21 +172,26 @@ class HTLinearModel:
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
-                # y = one element per row [Ci_istr]
-                y = np.array(Ci_instr['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])
-                y = y.reshape(len(y), 1)
+                # y = one element per row [Ci_istr], getting only the first NUM_SAMPLES elements for each NUM_RUNS
+                y = Ci_instr['S' + str(s) + '-C' + str(c)].reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1)
 
                 if Ci_unhalted_clk_td2 == None:
-                    X = [[i] for i in Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES]]
+                    # Reshape to get only the first NUM_SAMPLES elements
+                    clk_td1_column = Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)].reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1)
+
+                    X = [[i] for i in clk_td1_column]
                 else:
+                    # Reshape to get only the first NUM_SAMPLES elements
+                    clk_td1_column = Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)].reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1)
+                    clk_td2_column = Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)].reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1)
+
                     # X = two elems per row [Ci_unhalted_clk_td1, Ci_unhalted_clk_td2]
-                    X = [[i, j] for i, j in zip(Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES], Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)][:bac.NUM_SAMPLES])]
+                    X = np.column_stack((clk_td1_column, clk_td2_column))
 
                 regr = lm.LinearRegression(fit_intercept=False) # fit_intercept=False is equivalent to "+ 0" in R
                 regr.fit(X, y)
                 result['S' + str(s) + '-C' + str(c)] = {'model' : regr, 'coefficients': regr.coef_}
                 # print(regr.coef_)
-                # print(result)
         return result
 
     # For each Socket and for each Core i in Socket, compute Ci_instr_max at td1 and td2
@@ -320,18 +325,18 @@ class HTLinearModel:
                     result['S' + str(s) + '-C' + str(c)][i] = sum(tmp_ipcs.values()) / self.my_sut_config.CPU_THREADS_PER_CORE
         return result
 
-    # Compute the system global mean of Ci_max_IPC_td_max
-    def compute_sys_mean_real_IPC(self, Ci_IPC_max_td_max):
-        result = pd.Series(name='Sys_mean_IPC')
+    # Compute the system global mean of Ci_real_IPCs
+    def compute_sys_mean_real_IPC(self, Ci_real_IPCs):
+        result = pd.Series(name='Sys_mean_real_IPC')
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 if len(result) == 0:
-                    result = result.append(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
+                    result = result.append(Ci_real_IPCs['S' + str(s) + '-C' + str(c)])
                 else:
-                    result = result.add(Ci_IPC_max_td_max['S' + str(s) + '-C' + str(c)])
+                    result = result.add(Ci_real_IPCs['S' + str(s) + '-C' + str(c)])
 
         result = result / self.my_sut_config.CPU_PHYSICAL_CORES
-        result.name = "Sys_mean_IPC"
+        result.name = "Sys_mean_real_IPC"
         return result
 
     # Compute the system global mean of estimated IPC
