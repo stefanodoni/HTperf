@@ -179,7 +179,7 @@ class HTLinearModel:
                     # Reshape to get only the first NUM_SAMPLES elements
                     clk_td1_column = Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)].reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1)
 
-                    X = [[i] for i in clk_td1_column]
+                    X = [i for i in clk_td1_column]
                 else:
                     # Reshape to get only the first NUM_SAMPLES elements
                     clk_td1_column = Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)].reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1)
