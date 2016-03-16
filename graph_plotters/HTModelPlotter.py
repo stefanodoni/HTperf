@@ -24,6 +24,29 @@ class HTModelPlotter:
     def init(self, output_dir, num_subplots, secondary_axes=None):
         self.output_dir = output_dir
         self.num_subplots = num_subplots
+
+        self.fig, self.axarr = None, None
+        self.ax2 = {}
+        self.secondary_axes = []
+        self.y_axis_min_values = {}
+        self.y_axis_max_values = {}
+        self.x_max = 0 # Used to limit the X axis
+        self.plots = []
+        self.scatters = []
+        self.scatter_labels = []
+
+        params = {'text.usetex': True,
+                  'text.latex.unicode': True,
+                  'backend': 'ps',
+                  'legend.fancybox': True,
+                  'font.family': 'serif',
+                  'savefig.dpi': '300',
+                  'savefig.format': 'eps',
+                  'path.simplify': True,
+                  'ps.usedistiller': 'xpdf'}
+        pylab.rcParams.update(params)
+        # pylab.rcParams['legend.loc'] = 'best' # Automatically tries to put legend in the best location. Remove loc and bbox_to_anchor
+
         if secondary_axes != None:
             self.secondary_axes = secondary_axes
 
@@ -174,26 +197,32 @@ class HTModelPlotter:
         regr.fit(X_lr, y_lr)
 
         if y_axis == 1: # Use secondary y axis on X_axis
-            tmp_plot, = self.ax2[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
-                                                                                                             r"$R^2: " + str(regr.score(X, y)) + "$\n"
-                                                                                                             r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+            tmp_plot, = self.ax2[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label)# + "\n" +
+                                                                                                             # r"$R^2: " + str(regr.score(X, y)) + "$\n"
+                                                                                                             # r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+            print(label + " R^2: " + str(regr.score(X, y)))
+            print(label + " MAE: " + str(mae(y, regr.predict(X))))
             if y_axis_min != None:
                 self.y_axis_min_values[self.ax2[X_axis]] = y_axis_min
             if y_axis_max != None:
                 self.y_axis_max_values[self.ax2[X_axis]] = y_axis_max
         else: # Use primary y axis on X_axis
             if isinstance(self.axarr, np.ndarray):
-                tmp_plot, = self.axarr[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
-                                                                                                            r"$R^2: " + str(regr.score(X, y)) + "$\n"
-                                                                                                            r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+                tmp_plot, = self.axarr[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label)# + "\n" +
+                                                                                                            # r"$R^2: " + str(regr.score(X, y)) + "$\n"
+                                                                                                            # r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+                print(label + " R^2: " + str(regr.score(X, y)))
+                print(label + " MAE: " + str(mae(y, regr.predict(X))))
                 if y_axis_min != None:
                     self.y_axis_min_values[self.axarr[X_axis]] = y_axis_min
                 if y_axis_max != None:
                     self.y_axis_max_values[self.axarr[X_axis]] = y_axis_max
             else:
-                tmp_plot, = self.axarr.plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label + "\n" +
-                                                                                                            r"$R^2: " + str(regr.score(X, y)) + "$\n"
-                                                                                                            r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+                tmp_plot, = self.axarr.plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label)# + "\n" +
+                                                                                                            # r"$R^2: " + str(regr.score(X, y)) + "$\n"
+                                                                                                            # r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+                print(label + " R^2: " + str(regr.score(X, y)))
+                print(label + " MAE: " + str(mae(y, regr.predict(X))))
                 if y_axis_min != None:
                     self.y_axis_min_values[self.axarr] = y_axis_min
                 if y_axis_max != None:
@@ -203,19 +232,14 @@ class HTModelPlotter:
 
     # Set plot title, labels, legend and generate graph
     def gen_graph(self, filename, title,
-                  X_axis_labels, y_axis_primary_labels, y_axis_secondary_labels=None):
+                  X_axis_labels, y_axis_primary_labels, y_axis_secondary_labels=None,
+                  X_axis_max=None, legend_inside_graph=False, legend_position=None):
 
-        params = {'text.usetex': True,
-                  'text.latex.unicode': True,
-                  'backend': 'ps',
-                  'legend.fancybox': True,
-                  'font.family': 'serif',
-                  'savefig.dpi': '300',
-                  'savefig.format': 'eps',
-                  'path.simplify': True,
-                  'ps.usedistiller': 'xpdf'}
-        pylab.rcParams.update(params)
-        # pylab.rcParams['legend.loc'] = 'best' # Automatically tries to put legend in the best location. Remove loc and bbox_to_anchor
+        # Set default value if legend is placed outside or inside the graph
+        if not legend_inside_graph:
+            legend_position = "upper center"
+        if legend_inside_graph and legend_position == None:
+            legend_position = "upper left" # lower right, lower center, lower left, upper left, upper center, upper right
 
         # Set title and labels
         if isinstance(self.axarr, np.ndarray):
@@ -233,12 +257,14 @@ class HTModelPlotter:
 
             # Set plot legend
             plot_labels = [p.get_label() for p in self.plots]
-            lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels,
-                                       scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2)) # loc='lower right' loc='upper left' loc='upper center', bbox_to_anchor=(0.5,-0.2)
+            if legend_inside_graph:
+                lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position)
+            else:
+                lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
 
             # Set axes limits
             for ax in self.axarr:
-                ax.set_xlim(xmin=0, xmax=(self.x_max + bac.X_MAX_PADDING))
+                ax.set_xlim(xmin=0, xmax=((self.x_max + bac.X_MAX_PADDING) if X_axis_max == None else X_axis_max))
 
             for ax in self.axarr:
                 if ax in self.y_axis_min_values.keys():
@@ -273,11 +299,13 @@ class HTModelPlotter:
 
             # Set plot legend
             plot_labels = [p.get_label() for p in self.plots]
-            lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels,
-                                       scatterpoints=1, loc='upper center', bbox_to_anchor=(0.5,-0.2)) # loc='lower right' loc='upper left' loc='upper center', bbox_to_anchor=(0.5,-0.2)
+            if legend_inside_graph:
+                lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position)
+            else:
+                lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
 
             # Set axes limits
-            self.axarr.set_xlim(xmin=0, xmax=(self.x_max + bac.X_MAX_PADDING))
+            self.axarr.set_xlim(xmin=0, xmax=((self.x_max + bac.X_MAX_PADDING) if X_axis_max == None else X_axis_max))
             if self.axarr in self.y_axis_min_values.keys():
                 ymin = self.y_axis_min_values.get(self.axarr)
             else:
@@ -298,7 +326,7 @@ class HTModelPlotter:
 
         # Print plot to file: png, pdf, ps, eps and svg
         # with legend under the graph
-        plt.savefig(self.output_dir + filename + '.ps', format = 'ps', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        # plt.savefig(self.output_dir + filename + '.ps', format = 'ps', bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.savefig(self.output_dir + filename + '.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.savefig(self.output_dir + filename + '.pdf', format = 'pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
 

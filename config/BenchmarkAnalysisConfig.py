@@ -9,18 +9,18 @@ NUM_SAMPLES = 4 # Number of the first runs to use in the Linear Regression (e.g.
 NUM_RUNS = 10 # Number of runs in one test, usually 10 (i.e. number of steps in one growing load ladder)
 NUM_TESTS = 10 # Number of test repetitions, usually 10 (i.e. number of growing load ladders). Globally we have a number of single runs equal to NUM_RUNS * NUM_TESTS
 
-# TITLE = "RUBBoS Benchmark variable frequencies test\n" \
-#         "Fixed maximum frequencies: 800MHz, 1200MHz, 1600MHz, 2000MHz and 2900MHz\n" \
-#         "Linear Regressions consider first " + str(NUM_SAMPLES) + " samples"
+# BENCHMARK = "RUBBoS Benchmark"
+# BENCHMARK = "CBench Benchmark"
+BENCHMARK = "SPECpower\_ssj 2008 Benchmark"
 
-TITLE = "RUBBoS Benchmark\n" \
-        "Linear Regression consider first " + str(NUM_SAMPLES) + " samples"
-
-# TITLE = "CBench Benchmark\n" \
-#         "Linear Regression consider first " + str(NUM_SAMPLES) + " samples"
-
-# TITLE = "SPECpower\_ssj2008 v1.10 Benchmark\n" \
-#         "Linear Regression consider first " + str(NUM_SAMPLES) + " samples"
+# SUT = "SUT: HT on, TB on, Governor powersave"
+SUT = "SUT: HT on, TB on, Governor performance"
+# SUT = "SUT: HT on, TB off, Governor powersave"
+# SUT = "SUT: HT on, TB off, Governor performance"
+# SUT = "SUT: HT off, TB on, Governor powersave"
+# SUT = "SUT: HT off, TB on, Governor performance"
+# SUT = "SUT: HT off, TB off, Governor powersave"
+# SUT = "SUT: HT off, TB off, Governor performance"
 
 # Runs to be considered in computing real IPC
 START_RUN = 1
@@ -29,5 +29,5 @@ END_RUN = 10
 # Value added to x_max to plot streched line
 # X_MAX_PADDING = 20 # Graphs without LR to strech
 # X_MAX_PADDING = 50 # CBench
-X_MAX_PADDING = 100 # Rubbos
-# X_MAX_PADDING = 20000 # SPECpower
+# X_MAX_PADDING = 100 # Rubbos
+X_MAX_PADDING = 20000 # SPECpower

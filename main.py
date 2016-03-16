@@ -134,66 +134,36 @@ for test in test_names:
     ht_linear_models[test] = HTLinearModel().estimate(benchmark_datasets[test], OUTPUT_DIR, test, my_sut_config)
 
 # ======================= PLOT GRAPHS =====================================
-# cmap = plt.get_cmap('gnuplot')
-# colors = [cmap(i) for i in np.linspace(0, 1, len(test_numbers))]
-colors = ['#281D46', '#504FAF', '#088DA5', '#FE9900', '#E12727']
-
-# title = ''
-# for test, num in zip(test_names, test_numbers):
-#     title = title + test + ("\n" if num != test_numbers[-1] else '')
-#
-# title = title + "\nLinear Regressions considering first " + str(bac.NUM_SAMPLES) + " samples"
-
-# title = "RUBBoS Benchmark variable frequencies test\n" \
-#         "Fixed maximum frequencies: 800MHz, 1200MHz, 1600MHz, 2000MHz and 2900MHz\n" \
-#         "Linear Regressions consider first " + str(bac.NUM_SAMPLES) + " samples"
-
-# plotter = HTModelPlotter().init(OUTPUT_DIR, 3, [0])
-# # First plot scatter and standard points in order to determinate the maximum X value
-# for test, color in zip(test_names, colors):
-#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], benchmark_datasets[test]['runs']['UavgTot'], 0, 0, 'green', None, False, False, 0, 100)
-#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', None, False, True, 0, 100)
-#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, None, False, False, 0, 100)
-#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], benchmark_datasets[test]['runs']['RavgTot'], 0, 1, color, test + '\nTot Avg Response Time (ms)')
-#
-#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, None, False, True, 0, 100)
-#
-#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 2, 0, color, test + '\nTot Avg Thread Density', False, False, 1, 2)
-#
-# # Then use the x_max value to print the lr lines
-# for test, color in zip(test_names, colors):
-#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], benchmark_datasets[test]['runs']['UavgTot'], 0, 0, 'green', test + '\nTot Avg Utilization (Benchmark) LR', False, False, 0, 100)
-#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_cbt, 0, 0, 'black', test + '\nTot Avg Core Busy Time (C0 state) LR', False, True, 0, 100)
-#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, False, 0, 100)
-#
-#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, test + '\nC0 Productivity LR', False, True, 0, 100)
-#
-# plotter.gen_graph("All-vs-X", bac.TITLE,
-#                   {0: 'System Throughput', 1: 'System Throughput', 2: 'System Throughput'},
-#                   {0: 'CPU Traditional Utilization', 1: 'CPU Productivity', 2: 'Tot Avg Thread Density'},
-#                   {0: 'Response Time'})
+# colors = ['#E12727', '#504FAF', '#088DA5', '#FE9900', '#12AD2A'] #281D46
+colors = ['#0041CC', '#FF0000', '#E6C700', '#FF00BF', '#00CC22']
 
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
 for test, color in zip(test_names, colors):
-    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, None, False, False, 0, 120)
+    color = (colors[0] if len(test_names) == 1 else color)
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, (None if len(test_names) > 1 else "Utilizzo Tradizionale"), False, False, 0, 100)
 
 # Then use the x_max value to print the lr lines
 for test, color in zip(test_names, colors):
-    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, test + "\nTot Avg Utilization (Sar) LR", False, False, 0, 120)
+    color = (colors[1] if len(test_names) == 1 else color)
+    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, (test if len(test_names) > 1 else "Utilization Law"), False, False, 0, 100)
 
-plotter.gen_graph("U-vs-X", bac.TITLE, {0: 'System Throughput'}, {0: 'CPU Traditional Utilization'})
+plotter.gen_graph("U-vs-X", "Stima dell'Utilizzo Tradizionale (" + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+                  {0: 'System Throughput'}, {0: 'Utilizzo Tradizionale'}, None, None, True)
 
-# plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
-# # First plot scatter and standard points in order to determinate the maximum X value
-# for test, color in zip(test_names, colors):
-#     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, None, False, True, 0, 120)
-#
-# # Then use the x_max value to print the lr lines
-# for test, color in zip(test_names, colors):
-#     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, test + '\nC0 Productivity LR', False, True, 0, 120)
-#
-# plotter.gen_graph("P-vs-X", bac.TITLE, {0: 'System Throughput'}, {0: 'CPU Productivity'})
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
+# First plot scatter and standard points in order to determinate the maximum X value
+for test, color in zip(test_names, colors):
+    color = (colors[0] if len(test_names) == 1 else color)
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, (None if len(test_names) > 1 else "Productivity"), False, True, 0, 100)
+
+# Then use the x_max value to print the lr lines
+for test, color in zip(test_names, colors):
+    color = (colors[1] if len(test_names) == 1 else color)
+    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, (test if len(test_names) > 1 else "Regressione Lineare"), False, True, 0, 100)
+
+plotter.gen_graph("P-vs-X", "Stima della Productivity (" + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+                  {0: 'System Throughput'}, {0: 'Productivity'}, None, None, True)
 
 # plotter = HTModelPlotter().init(OUTPUT_DIR, 2)
 # # First plot scatter and standard points in order to determinate the maximum X value
@@ -203,16 +173,57 @@ plotter.gen_graph("U-vs-X", bac.TITLE, {0: 'System Throughput'}, {0: 'CPU Tradit
 #
 # plotter.gen_graph("R,atd-vs-X", bac.TITLE, {0: 'System Throughput', 1: 'System Throughput'}, {0: 'Tot Avg Response Time (ms)', 1: 'Tot Avg Thread Density'})
 
-# plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
-# # First plot scatter and standard points in order to determinate the maximum X value
-# for test, color in zip(test_names, colors):
-#     plotter.plot_scatter(ht_linear_models[test].Sys_mean_utilization, benchmark_datasets[test]['runs']['RavgTot'], 0, 0, color, test + '\nTot Avg Response Time (ms)')
-#
-# plotter.gen_graph("R-vs-U", bac.TITLE, {0: 'CPU Traditional Utilization'}, {0: 'Tot Avg Response Time (ms)'})
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
+# First plot scatter and standard points in order to determinate the maximum X value
+for test, color in zip(test_names, colors):
+    color = (colors[0] if len(test_names) == 1 else color)
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 0, 0, color, (test if len(test_names) > 1 else "Average Thread Density"), False, False, 1, 2)
 
-# plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
-# # First plot scatter and standard points in order to determinate the maximum X value
-# for test, color in zip(test_names, colors):
-#     plotter.plot_scatter(ht_linear_models[test].Sys_mean_productivity, benchmark_datasets[test]['runs']['RavgTot'], 0, 0, color, test + '\nTot Avg Response Time (ms)', True)
-#
-# plotter.gen_graph("R-vs-P", bac.TITLE, {0: 'CPU Productivity'}, {0: 'Tot Avg Response Time (ms)'})
+plotter.gen_graph("Atd-vs-X", "Andamento dell'Average Thread Density" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+                  {0: 'System Throughput'}, {0: 'Average Thread Density'}, None, None, True)
+
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
+# First plot scatter and standard points in order to determinate the maximum X value
+for test, color in zip(test_names, colors):
+    color = (colors[0] if len(test_names) == 1 else color)
+    plotter.plot_scatter(ht_linear_models[test].Sys_mean_utilization, benchmark_datasets[test]['runs']['RavgTot'], 0, 0, color, (test if len(test_names) > 1 else "Response Time (ms)"))
+
+plotter.gen_graph("R-vs-U", "Andamento del Response Time rispetto all'Utilizzo Tradizionale" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+                  {0: 'Utilizzo Tradizionale'}, {0: 'Response Time (ms)'}, None, 100, True)
+
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
+# First plot scatter and standard points in order to determinate the maximum X value
+for test, color in zip(test_names, colors):
+    color = (colors[0] if len(test_names) == 1 else color)
+    plotter.plot_scatter(ht_linear_models[test].Sys_mean_productivity, benchmark_datasets[test]['runs']['RavgTot'], 0, 0, color, (test if len(test_names) > 1 else "Response Time (ms)"), True)
+
+plotter.gen_graph("R-vs-P", "Andamento del Response Time rispetto alla Productivity" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+                  {0: 'Productivity'}, {0: 'Response Time (ms)'}, None, 100, True)
+
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
+# First plot scatter and standard points in order to determinate the maximum X value
+for test, color in zip(test_names, colors):
+    color = (colors[0] if len(test_names) == 1 else color)
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_active_frequency, 0, 0, color, (None if len(test_names) > 1 else "Active Frequency (GHz)"), False, False, 0, 3500000000)
+
+plotter.gen_graph("AFREQ-vs-X", "Andamento della AFREQ" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+                  {0: 'System Throughput'}, {0: 'Active Frequency (GHz)'}, None, None, True, "lower right")
+
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1, True)
+# First plot scatter and standard points in order to determinate the maximum X value
+for test, color in zip(test_names, colors):
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0,
+                         (colors[0] if len(test_names) == 1 else color), (None if len(test_names) > 1 else "Utilizzo Tradizionale"),
+                         False, False, 0, 100)
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_active_frequency, 0, 1,
+                        (colors[2] if len(test_names) == 1 else color), (None if len(test_names) > 1 else "Active Frequency (GHz)"),
+                         False, False, 0, 3500000000)
+
+# Then use the x_max value to print the lr lines
+for test, color in zip(test_names, colors):
+    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0,
+                          (colors[1] if len(test_names) == 1 else color), (test if len(test_names) > 1 else "Utilization Law"),
+                          False, False, 0, 100)
+
+plotter.gen_graph("U,AFREQ-vs-X", "Stima dell'Utilizzo Tradizionale (" + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+                  {0: 'System Throughput'}, {0: 'Utilizzo Tradizionale'}, {0: 'Active Frequency (GHz)'}, None, True, "lower right")
