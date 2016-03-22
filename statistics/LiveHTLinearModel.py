@@ -66,12 +66,12 @@ class LiveHTLinearModel:
 
                 for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_td2) == 0:
-                        tmp_td2 = tmp_td2.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
+                        tmp_td2 = tmp_td2.append(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
                     else:
-                        tmp_td2 = tmp_td2.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
+                        tmp_td2 = tmp_td2.add(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
 
                 # Calculate Ci_unhalted_clk_td2 using unhalted clocks of the first logical core of cpu c
-                result['S' + str(s) + '-C' + str(c)]  = tmp_td2.sub(dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
+                result['S' + str(s) + '-C' + str(c)]  = tmp_td2.sub(dataset['perf-stats']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
         return result
 
     # For each Socket and for each Core i in Socket, calculate Ci_unhalted_clk_td1
@@ -79,7 +79,7 @@ class LiveHTLinearModel:
         result = {}
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
-                tmp_td1 = dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'].copy()
+                tmp_td1 = dataset['perf-stats']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'].copy()
 
                 if Ci_unhalted_clk_td2 == None:
                     result['S' + str(s) + '-C' + str(c)] = tmp_td1
@@ -96,9 +96,9 @@ class LiveHTLinearModel:
 
                 for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_instr) == 0:
-                        tmp_instr = tmp_instr.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'])
+                        tmp_instr = tmp_instr.append(dataset['perf-stats']['CPU' + str(j) + '_instructions'])
                     else:
-                        tmp_instr = tmp_instr.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'])
+                        tmp_instr = tmp_instr.add(dataset['perf-stats']['CPU' + str(j) + '_instructions'])
 
                 result['S' + str(s) + '-C' + str(c)]  = tmp_instr.copy()
         return result
@@ -174,10 +174,10 @@ class LiveHTLinearModel:
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
                 tmp_atd = Ci_unhalted_clk_td1['S' + str(s) + '-C' + str(c)].copy()
                 # Calculate using unhalted clocks of the first logical core of cpu c
-                tmp_atd = tmp_atd.div(dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
+                tmp_atd = tmp_atd.div(dataset['perf-stats']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'])
 
                 if Ci_unhalted_clk_td2 != None:
-                    tmp_td2 = Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any']) \
+                    tmp_td2 = Ci_unhalted_clk_td2['S' + str(s) + '-C' + str(c)].div(dataset['perf-stats']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any']) \
                         .multiply(2)
                     tmp_atd = tmp_atd.add(tmp_td2)
 
@@ -209,9 +209,9 @@ class LiveHTLinearModel:
 
                 for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_ref_tsc) == 0:
-                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
                     else:
-                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
 
                 tmp_ref_tsc = tmp_ref_tsc.div(self.my_sut_config.CPU_THREADS_PER_CORE)
                 result['S' + str(s) + '-C' + str(c)] = tmp_ref_tsc.div(self.my_sut_config.CPU_BASE_OPERATING_FREQUENCY)
@@ -234,9 +234,9 @@ class LiveHTLinearModel:
     def compute_sys_mean_utilization(self, dataset):
         result = pd.Series(name='Sys_mean_utilization')
 
-        result = result.append(dataset['sar-stats']['mean']['User'])
-        result = result.add(dataset['sar-stats']['mean']['Nice'])
-        result = result.add(dataset['sar-stats']['mean']['System'])
+        result = result.append(dataset['sar-stats']['User'])
+        result = result.add(dataset['sar-stats']['Nice'])
+        result = result.add(dataset['sar-stats']['System'])
 
         result.name = "Sys_mean_utilization"
         return result
@@ -255,14 +255,14 @@ class LiveHTLinearModel:
 
         for s in range(self.my_sut_config.CPU_SOCKETS):
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
-                result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']['mean']))], dtype=float) # Set all to zero
+                result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']))], dtype=float) # Set all to zero
 
                 for i in positions:
                     for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
-                     result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['mean']['CPU' + str(j) + '_instructions'][i]
+                     result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['CPU' + str(j) + '_instructions'][i]
 
                     # Calculate IPC using unhalted clocks any of the first logical core of cpu c
-                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['mean']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'][i]
+                    result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] / dataset['perf-stats']['CPU' + str(self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)][0]) + '_cpu_clk_unhalted_thread_any'][i]
         return result
 
     # Compute the system global mean of Ci_real_IPCs
@@ -314,11 +314,11 @@ class LiveHTLinearModel:
 
                 for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_freq) == 0 and len(tmp_ref_tsc) == 0:
-                        tmp_freq = tmp_freq.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
-                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                        tmp_freq = tmp_freq.append(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
+                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
                     else:
-                        tmp_freq = tmp_freq.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
-                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['mean']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                        tmp_freq = tmp_freq.add(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_thread'])
+                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
 
                 # Divide by number of threads per core
                 tmp_freq = tmp_freq.div(self.my_sut_config.CPU_THREADS_PER_CORE)

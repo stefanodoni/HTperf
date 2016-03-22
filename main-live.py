@@ -30,6 +30,9 @@ sar_file = "/sar.csv"
 perf_file = "/perf.csv"
 sysconfig_file = "/sysConfig.csv"
 
+# Create DB file and empty it
+open(DBConstants.DB_NAME, 'w').close()
+
 # Data structures
 system_config = {}
 live_report_datasets = {}
@@ -50,7 +53,6 @@ start_TS = sar_dataframe[Parser.TIMESTAMP_STR].iloc[0]
 end_TS = sar_dataframe[Parser.TIMESTAMP_STR].iloc[-1]
 
 # ======================= PERSIST DATA IN SQLITE ====================
-#os.remove(DBConstants.DB_NAME) # Remove DB file and reconstruct it
 conn = sqlite3.connect(DBConstants.DB_NAME)
 c = conn.cursor()
 
@@ -61,7 +63,7 @@ conn.commit()
 
 i = 0
 while start_TS + pd.Timedelta(seconds=interval) < end_TS:
-    live_report_datasets[i] = LiveReportDataset().create(conn, start_TS, start_TS + pd.Timedelta(seconds=interval))
+    live_report_datasets[i] = LiveReportDataset().create(conn, start_TS, start_TS + pd.Timedelta(seconds=interval), interval)
     start_TS = start_TS + pd.Timedelta(seconds=interval)
     i += 1
 
@@ -124,14 +126,16 @@ for i in range(0,len(live_report_datasets)):
         models[i].Sys_mean_active_frequency = models[i].compute_sys_mean_active_frequency(models[i].Ci_active_frequency)
 
         print('{:>19}\t{:>27}\t{:>27}\t{:>23}\t{:>20}\t{:>22}\t{:>23}\t{:>26}'.format(
-            str(live_report_datasets[i]['sar-stats']['mean'][Parser.TIMESTAMP_START_STR][0]),
+            str(live_report_datasets[i]['sar-stats'][Parser.TIMESTAMP_START_STR][0] if not live_report_datasets[i]['sar-stats'].empty
+                else "--EMPTY INTERVAL!--"),
             # str(models[i].linear_model['S0-C0']['coefficients'][0][0]),
             # (str(models[i].linear_model['S0-C0']['coefficients'][0][1]) if models[i].my_sut_config.CPU_HT_ACTIVE else "-"),
             (str(models[i].Sys_mean_estimated_IPC[0]) if not models[i].my_sut_config.CPU_HT_ACTIVE else "HT ON: see IPC_TD2"),
             (str(models[i].Sys_mean_estimated_IPC[0]) if models[i].my_sut_config.CPU_HT_ACTIVE else "HT OFF: see IPC_TD1"),
             (str(models[i].Ci_instr_max['S0-C0'][0][0]) if not models[i].my_sut_config.CPU_HT_ACTIVE else str(models[i].Ci_instr_max['S0-C0'][0][1])),
             str(models[i].Sys_mean_productivity[0] * 100),
-            str(models[i].Sys_mean_utilization[0]),
+            str(models[i].Sys_mean_utilization[0] if not live_report_datasets[i]['sar-stats'].empty
+                else "NO SAR DATA COLLECTED!"),
             str(models[i].Sys_mean_atd[0]),
             str(models[i].Sys_mean_active_frequency[0])
         ))
