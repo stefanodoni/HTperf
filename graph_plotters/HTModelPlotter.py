@@ -262,10 +262,12 @@ class HTModelPlotter:
             else:
                 lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
 
-            # Set axes limits
+            # Set axes limits and graph grid
             for ax in self.axarr:
                 ax.set_xlim(xmin=0, xmax=((self.x_max + bac.X_MAX_PADDING) if X_axis_max == None else X_axis_max))
+                ax.grid()
 
+            # Primary axes
             for ax in self.axarr:
                 if ax in self.y_axis_min_values.keys():
                     ymin = self.y_axis_min_values.get(ax)
@@ -282,8 +284,22 @@ class HTModelPlotter:
                 else:
                     ax.set_ylim(ymin=ymin)
 
+            # Secondary axes
             for i, ax2 in self.ax2.items():
-                ax2.set_ylim(ymin=0)
+                if ax2 in self.y_axis_min_values.keys():
+                    ymin = self.y_axis_min_values.get(ax2)
+                else:
+                    ymin = 0
+
+                if ax2 in self.y_axis_max_values.keys():
+                    ymax = self.y_axis_max_values.get(ax2)
+                else:
+                    ymax = None
+
+                if ymax != None:
+                    ax2.set_ylim(ymin=ymin, ymax=ymax)
+                else:
+                    ax2.set_ylim(ymin=ymin)
         else:
             self.axarr.set_title(title)
 
@@ -304,8 +320,13 @@ class HTModelPlotter:
             else:
                 lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
 
+            # Set graph grid
+            self.axarr.grid()
+
             # Set axes limits
             self.axarr.set_xlim(xmin=0, xmax=((self.x_max + bac.X_MAX_PADDING) if X_axis_max == None else X_axis_max))
+
+            # Primary axes
             if self.axarr in self.y_axis_min_values.keys():
                 ymin = self.y_axis_min_values.get(self.axarr)
             else:
@@ -321,8 +342,22 @@ class HTModelPlotter:
             else:
                 self.axarr.set_ylim(ymin=ymin)
 
+            # Secondary axes
             for i, ax2 in self.ax2.items():
-                ax2.set_ylim(ymin=0)
+                if ax2 in self.y_axis_min_values.keys():
+                    ymin = self.y_axis_min_values.get(ax2)
+                else:
+                    ymin = 0
+
+                if ax2 in self.y_axis_max_values.keys():
+                    ymax = self.y_axis_max_values.get(ax2)
+                else:
+                    ymax = None
+
+                if ymax != None:
+                    ax2.set_ylim(ymin=ymin, ymax=ymax)
+                else:
+                    ax2.set_ylim(ymin=ymin)
 
         # Print plot to file: png, pdf, ps, eps and svg
         # with legend under the graph
