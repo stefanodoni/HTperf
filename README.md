@@ -27,7 +27,7 @@ $ ./main.py /path/to/report/dir /path/to/output/dir
 Optional parameters are:
 
  - -pcm: parse the pcm.csv (report of Intel PCM tool) file placed in report directory.
- - -sysconfig: parse the single sysConfig.csv file placed in the root of reports directory. If not used, user must change SUTConfig.py manual parameters accordingly to the system configuration.
+ - -sysconfig: parse the sysConfig.csv file placed in each report directory in order to set the system configuration relative to the report. If not used, user must change SUTConfig.py manual parameters accordingly to the system configuration. Notice that in this case the system configuration is unique for each report directory.
 
 ```sh
 $ ./main.py /path/to/report/dir /path/to/output/dir -sysconfig -pcm

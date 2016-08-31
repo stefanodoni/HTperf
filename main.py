@@ -59,6 +59,7 @@ open(DBConstants.DB_NAME, 'w').close()
 # Data structures
 system_config = {}
 benchmark_dataframes = {}
+benchmark_SUTconfigs = {}
 sar_dataframes = {}
 pcm_dataframes = {}
 perf_dataframes = {}
@@ -68,11 +69,7 @@ benchmark_datasets = {}
 ht_linear_models = {}
 
 # ======================= DATA IMPORT =============================
-if using_sysconfig:
-    system_config = SysConfigParser().parse(path_to_tests + '/' + sysconfig_file)
-    my_sut_config = SUTConfig()
-    my_sut_config.set(system_config)
-else:
+if not using_sysconfig:
     my_sut_config = SUTConfig()
     my_sut_config.set_manual()
 
@@ -81,6 +78,12 @@ for test in test_names:
     benchmark_dataframes[test] = BenchmarkParser().parse(path_to_tests + '/' + test + benchmark_file)
     sar_dataframes[test] = SarParser().parse(path_to_tests + '/' + test + sar_file)
     perf_dataframes[test] = PerfParser().parse(path_to_tests + '/' + test + perf_file)
+
+    if using_sysconfig:
+        print("Setting SysConfig file of test: " + test)
+        system_config = SysConfigParser().parse(path_to_tests + '/' + test + sysconfig_file)
+        benchmark_SUTconfigs[test] = SUTConfig()
+        benchmark_SUTconfigs[test].set(system_config)
 
     if using_pcm:
         pcm_dataframes[test] = PCMParser().parse(path_to_tests + '/' + test + pcm_file)
@@ -131,25 +134,32 @@ conn.close()
 
 # ======================= STATISTICS =====================================
 for test in test_names:
-    ht_linear_models[test] = HTLinearModel().estimate(benchmark_datasets[test], OUTPUT_DIR, test, my_sut_config)
+    if using_sysconfig:
+        ht_linear_models[test] = HTLinearModel().estimate(benchmark_datasets[test], OUTPUT_DIR, test, benchmark_SUTconfigs[test])
+    else:
+        ht_linear_models[test] = HTLinearModel().estimate(benchmark_datasets[test], OUTPUT_DIR, test, my_sut_config)
 
 # ======================= PLOT GRAPHS =====================================
 # colors = ['#E12727', '#504FAF', '#088DA5', '#FE9900', '#12AD2A'] #281D46
 colors = ['#0041CC', '#FF0000', '#E6C700', '#FF00BF', '#00CC22']
+colors_second_ax = ['#f0f465', '#9cec5b', '#50c5b7', '#6184d8', '#533a71']
 
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
 for test, color in zip(test_names, colors):
     color = (colors[0] if len(test_names) == 1 else color)
-    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, (None if len(test_names) > 1 else "Utilizzo Tradizionale"), False, False, 0, 100)
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, (None if len(test_names) > 1 else "Utilization"), False, False, 0, 100)
 
 # Then use the x_max value to print the lr lines
 for test, color in zip(test_names, colors):
     color = (colors[1] if len(test_names) == 1 else color)
     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, (test if len(test_names) > 1 else "Utilization Law"), False, False, 0, 100)
 
-plotter.gen_graph("U-vs-X", "Stima dell'Utilizzo Tradizionale (" + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
-                  {0: 'Throughput'}, {0: 'Utilizzo Tradizionale'}, None, None, True)
+plotter.gen_graph("U-vs-X", "",
+                  #"Stima dell'Utilizzo (sui primi " + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
+                  {0: 'Throughput'}, {0: 'Utilization'}, None, None,
+                  #True)
+                  False)
 
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
@@ -162,8 +172,8 @@ for test, color in zip(test_names, colors):
     color = (colors[1] if len(test_names) == 1 else color)
     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 1, 0, color, (test if len(test_names) > 1 else "Regressione Lineare"), False, True, 0, 100)
 
-plotter.gen_graph("P-vs-X", "Stima della Productivity (" + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
-                  {0: 'Throughput'}, {0: 'Productivity'}, None, None, True)
+plotter.gen_graph("P-vs-X", "Stima della Productivity (sui primi " + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
+                  {0: 'Throughput'}, {0: 'Productivity'}) #, None, None, True)
 
 # plotter = HTModelPlotter().init(OUTPUT_DIR, 2)
 # # First plot scatter and standard points in order to determinate the maximum X value
@@ -179,8 +189,8 @@ for test, color in zip(test_names, colors):
     color = (colors[0] if len(test_names) == 1 else color)
     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_atd, 0, 0, color, (test if len(test_names) > 1 else "ATD"), False, False, 1, 2)
 
-plotter.gen_graph("Atd-vs-X", "Andamento dell'Average Thread Density" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
-                  {0: 'Throughput'}, {0: 'Average Thread Density'}, None, None, True)
+plotter.gen_graph("Atd-vs-X", "Andamento dell'Average Thread Density" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
+                  {0: 'Throughput'}, {0: 'Average Thread Density'}) #, None, None, True)
 
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
@@ -188,8 +198,8 @@ for test, color in zip(test_names, colors):
     color = (colors[0] if len(test_names) == 1 else color)
     plotter.plot_scatter(ht_linear_models[test].Sys_mean_utilization, benchmark_datasets[test]['runs']['RavgTot'], 0, 0, color, (test if len(test_names) > 1 else "Response Time (ms)"))
 
-plotter.gen_graph("R-vs-U", "Andamento del Response Time rispetto all'Utilizzo Tradizionale" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
-                  {0: 'Utilizzo Tradizionale'}, {0: 'Response Time (ms)'}, None, 100, True)
+plotter.gen_graph("R-vs-U", "Andamento del Response Time rispetto all'Utilizzo" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
+                  {0: 'Utilizzo'}, {0: 'Response Time (ms)'}, None, 100) #, True)
 
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
@@ -197,35 +207,43 @@ for test, color in zip(test_names, colors):
     color = (colors[0] if len(test_names) == 1 else color)
     plotter.plot_scatter(ht_linear_models[test].Sys_mean_productivity, benchmark_datasets[test]['runs']['RavgTot'], 0, 0, color, (test if len(test_names) > 1 else "Response Time (ms)"), True)
 
-plotter.gen_graph("R-vs-P", "Andamento del Response Time rispetto alla Productivity" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
-                  {0: 'Productivity'}, {0: 'Response Time (ms)'}, None, 100, True)
+plotter.gen_graph("R-vs-P", "Andamento del Response Time rispetto alla Productivity" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
+                  {0: 'Productivity'}, {0: 'Response Time (ms)'}, None, 100) #, True)
 
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
 for test, color in zip(test_names, colors):
+    if using_sysconfig:
+        my_sut_config = benchmark_SUTconfigs[test]
+
     color = (colors[0] if len(test_names) == 1 else color)
     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_active_frequency, 0, 0,
                          color, (test if len(test_names) > 1 else "AFREQ (GHz)"),
                          False, False, 0, (my_sut_config.CPU_MAX_FREQUENCY_ALL_CORES_BUSY + 600000000))
 
-plotter.gen_graph("AFREQ-vs-X", "Andamento dell'Active Frequency" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
+plotter.gen_graph("AFREQ-vs-X", "Andamento dell'Active Frequency" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
                   {0: 'Throughput'}, {0: 'Active Frequency (GHz)'}, None, None, True, "lower right")
 
 plotter = HTModelPlotter().init(OUTPUT_DIR, 1, True)
 # First plot scatter and standard points in order to determinate the maximum X value
-for test, color in zip(test_names, colors):
+for test, color, second_color in zip(test_names, colors, colors_second_ax):
+    if using_sysconfig:
+        my_sut_config = benchmark_SUTconfigs[test]
+
     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0,
-                         (colors[0] if len(test_names) == 1 else color), (None if len(test_names) > 1 else "Utilizzo Tradizionale"),
+                         (colors[0] if len(test_names) == 1 else color), (None if len(test_names) > 1 else "Utilizzo misurato"),
                          False, False, 0, 100)
     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_active_frequency, 0, 1,
-                        (colors[2] if len(test_names) == 1 else color), (None if len(test_names) > 1 else "AFREQ (GHz)"),
+                        (colors[2] if len(test_names) == 1 else second_color), test + " AFREQ (GHz)",
                          False, False, 0, (my_sut_config.CPU_MAX_FREQUENCY_ALL_CORES_BUSY + 600000000))
 
 # Then use the x_max value to print the lr lines
 for test, color in zip(test_names, colors):
     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0,
-                          (colors[1] if len(test_names) == 1 else color), (test if len(test_names) > 1 else "Utilization Law"),
+                          (colors[1] if len(test_names) == 1 else color), (test if len(test_names) > 1 else "Utilizzo estrapolato"),
                           False, False, 0, 100)
 
-plotter.gen_graph("U,AFREQ-vs-X", "Stima dell'Utilizzo Tradizionale (" + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK + "\n" + bac.SUT,
-                  {0: 'Throughput'}, {0: 'Utilizzo Tradizionale'}, {0: 'Active Frequency (GHz)'}, None, True, "lower right")
+plotter.gen_graph("U,AFREQ-vs-X", "Stima dell'Utilizzo (sui primi " + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
+                  {0: 'Throughput'}, {0: 'Utilizzo'}, {0: 'Active Frequency (GHz)'}, None, False) #, "lower right")
+
+print("FINISHED.")
