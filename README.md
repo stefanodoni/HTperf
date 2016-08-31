@@ -13,7 +13,7 @@ $ ./LaunchCollectors.py interval count /path/to/pmu-tools /path/to/output/dir
 
 ### Main.py
 Change the BenchmarkAnalysisConfig.py file constants accordingly to your desired configuration (depending on benchmark and output parameters).
-Execute main.py passing as arguments the path of directory containing the reports of each test under consideration and the output directory.
+Execute main.py passing as arguments the path of reports directory (that contains N folders, each one containing the report files of a single test) and the output folder.
 Each reporting directory must contains these csv files:
 
  - perf.csv: report of perf tool
