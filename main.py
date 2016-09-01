@@ -153,7 +153,7 @@ for test, color in zip(test_names, colors):
 # Then use the x_max value to print the lr lines
 for test, color in zip(test_names, colors):
     color = (colors[1] if len(test_names) == 1 else color)
-    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, (test if len(test_names) > 1 else "Utilization Law"), False, False, 0, 100, False)
+    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0, color, (test if len(test_names) > 1 else "Utilization Law"), False, False, 0, 100)
 
 plotter.gen_graph("U-vs-X", "",
                   #"Stima dell'Utilizzo (sui primi " + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
@@ -174,29 +174,29 @@ plotter.gen_graph("P-vs-X", "",
                   #""Stima della Productivity (sui primi " + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
                   {0: 'Throughput'}, {0: 'Productivity'}, None, None, True)
 
-plotter = HTModelPlotter().init(OUTPUT_DIR, 1, True)
+plotter = HTModelPlotter().init(OUTPUT_DIR, 1)
 # First plot scatter and standard points in order to determinate the maximum X value
 for test, color in zip(test_names, colors):
     plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0,
                         (colors[0] if len(test_names) == 1 else color), (None if len(test_names) > 1 else "Utilization"),
-                        False, False, 0, 100)
+                        False, False)#, 0, 100)
 
-    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 1,
+    plotter.plot_scatter(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0,
                         (colors[1] if len(test_names) == 1 else color), (None if len(test_names) > 1 else "Productivity"),
                          False, True)#, 0, 100)
 
 # Then use the x_max value to print the lr lines
 for test, color in zip(test_names, colors):
     plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_utilization, 0, 0,
-                          (colors[0] if len(test_names) == 1 else color), (test if len(test_names) > 1 else "Utilization Law"), False, False, 0, 100)
+                          (colors[0] if len(test_names) == 1 else color), (test if len(test_names) > 1 else "Utilization Law"), False, False)#, 0, 100)#, False)
 
-    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 1,
+    plotter.plot_lin_regr(benchmark_datasets[test]['runs']['XavgTot'], ht_linear_models[test].Sys_mean_productivity, 0, 0,
                       (colors[1] if len(test_names) == 1 else color),
-                      (test if len(test_names) > 1 else "Extrapolated Productivity"), False, True)#, 0, 100)
+                      (test if len(test_names) > 1 else "Extrapolated Productivity"), False, True)#, None, None, False)#, 0, 100)
 
 plotter.gen_graph("U,P-vs-X", "",
                   #"Stima dell'Utilizzo (sui primi " + str(bac.NUM_SAMPLES) + " campioni)" + "\n" + bac.BENCHMARK,# + "\n" + bac.SUT,
-                  {0: 'Throughput'}, {0: 'Utilization'}, {0: 'Productivity'}, None, True, "upper left")
+                  {0: 'Throughput'}, {0: 'Utilization/Productivity'}, None, None, True, "upper left")
 
 # plotter = HTModelPlotter().init(OUTPUT_DIR, 2)
 # # First plot scatter and standard points in order to determinate the maximum X value
