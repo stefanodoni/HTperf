@@ -174,7 +174,7 @@ class HTModelPlotter:
             self.plots.append(tmp_plot)
 
     # Plot Linear Regression of X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None):
+    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None, not_pass_through_origin=True):
         if percentual_X:
             X = X_dataset * 100
         else:
@@ -193,7 +193,7 @@ class HTModelPlotter:
         y = y.reshape(len(y), 1)
         y_lr = y.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
-        regr = lm.LinearRegression()
+        regr = lm.LinearRegression(fit_intercept=not_pass_through_origin)
         regr.fit(X_lr, y_lr)
 
         if y_axis == 1: # Use secondary y axis on X_axis
