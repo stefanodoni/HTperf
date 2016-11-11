@@ -1,7 +1,6 @@
 from parsers.Parser import Parser
 import csv
 
-__author__ = 'francesco'
 
 class SysConfigParser (Parser):
 

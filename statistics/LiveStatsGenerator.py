@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import sys
 
-__author__ = 'francesco'
 
 class LiveStatsGenerator:
     # The normalize_perf parameter is needed to correctly compute the number of perf metrics accordingly to the measurement interval

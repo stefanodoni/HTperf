@@ -1,11 +1,10 @@
-#!/usr/bin/python3.4
+#!/usr/bin/python3
 import os
 import shlex
 import subprocess
 import argparse
 import getpass
 
-__author__ = 'francesco'
 
 parser = argparse.ArgumentParser(description='LaunchCollectors tool: starts ocperf and sar tools, stops them and converts files.')
 parser.add_argument('interval', metavar='interval', help='sampling interval')
@@ -21,7 +20,6 @@ os.makedirs(os.path.dirname(OUTPUT_DIR), exist_ok=True)
 pmutoolsPath = os.path.join(args.pmutoolsdirpath, '')
 
 # Parameters
-# ocperfPath = '/home/francesco/Scrivania/pmu-tools/'
 interval = args.interval
 count = args.count # Total sar duration is sarInterval * sarCount seconds
 

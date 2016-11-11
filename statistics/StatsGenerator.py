@@ -2,7 +2,6 @@ from parsers.Parser import Parser
 import pandas as pd
 import numpy as np
 
-__author__ = 'francesco'
 
 class StatsGenerator:
     # The normalize_perf parameter is needed to correctly compute the number of perf metrics accordingly to the measurement interval

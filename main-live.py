@@ -1,4 +1,4 @@
-#!/usr/bin/python3.4
+#!/usr/bin/python3
 import argparse
 import sqlite3
 import pandas as pd
@@ -13,7 +13,6 @@ from config.SUTConfig import SUTConfig
 import config.BenchmarkAnalysisConfig as bac
 import sys
 
-__author__ = 'francesco'
 
 parser = argparse.ArgumentParser(description='HTperf tool: parse, aggregate, select and plot data.')
 parser.add_argument('inputdirpath', metavar='inputdirpath', help='path to directory containing sar.csv and perf.csv report files')

@@ -1,6 +1,5 @@
 import pandas as pd
 
-__author__ = 'francesco'
 
 class Parser:
     TIMESTAMP_STR = "Timestamp"

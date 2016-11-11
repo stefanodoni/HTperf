@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import config.BenchmarkAnalysisConfig as bac
 
-__author__ = 'francesco'
 
 class HTLinearModel:
     # Estimate multivariate linear regression model for each physical CPU and compute CPU productivity.

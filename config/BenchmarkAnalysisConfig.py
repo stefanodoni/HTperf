@@ -1,4 +1,3 @@
-__author__ = 'francesco'
 
 # ==========================================================================
 # Benchmark Results Analysis Settings

@@ -1,5 +1,9 @@
-from sklearn.metrics import mean_absolute_error as mae
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
+from sklearn.metrics import mean_absolute_error as mae
 import pylab
 import config.BenchmarkAnalysisConfig as bac
 from sklearn import linear_model as lm
@@ -174,7 +178,8 @@ class HTModelPlotter:
             self.plots.append(tmp_plot)
 
     # Plot Linear Regression of X_dataset vs [percentual] y_dataset on given X_axis and y_axis
-    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None, not_pass_through_origin=True):
+    #def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None, not_pass_through_origin=True):
+    def plot_lin_regr(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None, x_line_max=None, not_pass_through_origin=True):
         if percentual_X:
             X = X_dataset * 100
         else:
@@ -183,7 +188,8 @@ class HTModelPlotter:
         X = X.reshape(len(X), 1)
         X_lr = X.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
-        X_line = [[i] for i in range(0, self.x_max + bac.X_MAX_PADDING)] # Used to plot streched estimated line
+        #X_line = [[i] for i in range(0, self.x_max + bac.X_MAX_PADDING)] # Used to plot streched estimated line
+        X_line = [[i] for i in range(0, self.x_max + bac.X_MAX_PADDING if x_line_max == None else x_line_max)] # Used to plot streched estimated line
 
         if percentual_y:
             y = y_dataset * 100
@@ -192,6 +198,63 @@ class HTModelPlotter:
 
         y = y.reshape(len(y), 1)
         y_lr = y.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
+
+        regr = lm.LinearRegression(fit_intercept=not_pass_through_origin)
+        regr.fit(X_lr, y_lr)
+
+        if y_axis == 1: # Use secondary y axis on X_axis
+            tmp_plot, = self.ax2[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label)# + "\n" +
+                                                                                                             # r"$R^2: " + str(regr.score(X, y)) + "$\n"
+                                                                                                             # r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+            print(" R^2: " + str(regr.score(X, y)))
+            print(" MAE: " + str(mae(y, regr.predict(X))))
+            if y_axis_min != None:
+                self.y_axis_min_values[self.ax2[X_axis]] = y_axis_min
+            if y_axis_max != None:
+                self.y_axis_max_values[self.ax2[X_axis]] = y_axis_max
+        else: # Use primary y axis on X_axis
+            if isinstance(self.axarr, np.ndarray):
+                tmp_plot, = self.axarr[X_axis].plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label)# + "\n" +
+                                                                                                            # r"$R^2: " + str(regr.score(X, y)) + "$\n"
+                                                                                                            # r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+                print(" R^2: " + str(regr.score(X, y)))
+                print(" MAE: " + str(mae(y, regr.predict(X))))
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr[X_axis]] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr[X_axis]] = y_axis_max
+            else:
+                tmp_plot, = self.axarr.plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label)# + "\n" +
+                                                                                                            # r"$R^2: " + str(regr.score(X, y)) + "$\n"
+                                                                                                            # r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
+                print(" R^2: " + str(regr.score(X, y)))
+                print(" MAE: " + str(mae(y, regr.predict(X))))
+                if y_axis_min != None:
+                    self.y_axis_min_values[self.axarr] = y_axis_min
+                if y_axis_max != None:
+                    self.y_axis_max_values[self.axarr] = y_axis_max
+
+        self.plots.append(tmp_plot)
+
+    # Plot Linear Regression of X_dataset vs [percentual] y_dataset on given X_axis and y_axis. Raw in that it doesn't do any data filtering (i.e. benchmark run phase isolation)
+    def plot_lin_regr_raw(self, X_dataset, y_dataset, X_axis, y_axis, color, label, percentual_X=False, percentual_y=False, y_axis_min=None, y_axis_max=None, not_pass_through_origin=True):
+        if percentual_X:
+            X = X_dataset * 100
+        else:
+            X = X_dataset
+
+        X_lr = X.reshape(len(X), 1)
+        #X_lr = X.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
+
+        X_line = [[i] for i in range(0, self.x_max)] # Used to plot streched estimated line
+
+        if percentual_y:
+            y = y_dataset * 100
+        else:
+            y = y_dataset
+
+        y_lr = y.reshape(len(y), 1)
+        #y_lr = y.reshape(-1, bac.NUM_RUNS)[:,:bac.NUM_SAMPLES].reshape(-1, 1) # Samples used to estimate the Linear Regression
 
         regr = lm.LinearRegression(fit_intercept=not_pass_through_origin)
         regr.fit(X_lr, y_lr)
@@ -221,8 +284,8 @@ class HTModelPlotter:
                 tmp_plot, = self.axarr.plot(X_line, regr.predict(X_line), color=color, linewidth=2, label=label)# + "\n" +
                                                                                                             # r"$R^2: " + str(regr.score(X, y)) + "$\n"
                                                                                                             # r"$MAE: " + str(mae(y, regr.predict(X))) + "$")
-                print(label + " R^2: " + str(regr.score(X, y)))
-                print(label + " MAE: " + str(mae(y, regr.predict(X))))
+                print(label + " R^2: " + str(regr.score(X_lr, y_lr)))
+                print(label + " MAE: " + str(mae(y_lr, regr.predict(X_lr))))
                 if y_axis_min != None:
                     self.y_axis_min_values[self.axarr] = y_axis_min
                 if y_axis_max != None:
@@ -233,7 +296,7 @@ class HTModelPlotter:
     # Set plot title, labels, legend and generate graph
     def gen_graph(self, filename, title,
                   X_axis_labels, y_axis_primary_labels, y_axis_secondary_labels=None,
-                  X_axis_max=None, legend_inside_graph=False, legend_position=None):
+                  X_axis_max=None, legend_inside_graph=False, legend_position=None, include_legend=True):
 
         # Set default value if legend is placed outside or inside the graph
         if not legend_inside_graph:
@@ -256,11 +319,12 @@ class HTModelPlotter:
                     self.ax2[i].set_ylabel(label)
 
             # Set plot legend
-            plot_labels = [p.get_label() for p in self.plots]
-            if legend_inside_graph:
-                lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position)
-            else:
-                lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
+            if include_legend:
+                plot_labels = [p.get_label() for p in self.plots]
+                if legend_inside_graph:
+                    lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position)
+                else:
+                    lgd = self.axarr[-1].legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
 
             # Set axes limits and graph grid
             for ax in self.axarr:
@@ -314,11 +378,12 @@ class HTModelPlotter:
                     self.ax2[i].set_ylabel(label)
 
             # Set plot legend
-            plot_labels = [p.get_label() for p in self.plots]
-            if legend_inside_graph:
-                lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position)
-            else:
-                lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
+            if include_legend:
+                plot_labels = [p.get_label() for p in self.plots]
+                if legend_inside_graph:
+                    lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position)
+                else:
+                    lgd = self.axarr.legend(self.plots + self.scatters, plot_labels + self.scatter_labels, scatterpoints=1, loc=legend_position, bbox_to_anchor=(0.5,-0.2))
 
             # Set graph grid
             self.axarr.grid()
@@ -362,7 +427,8 @@ class HTModelPlotter:
         # Print plot to file: png, pdf, ps, eps and svg
         # with legend under the graph
         # plt.savefig(self.output_dir + filename + '.ps', format = 'ps', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.savefig(self.output_dir + filename + '.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.savefig(self.output_dir + filename + '.pdf', format = 'pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        # plt.savefig(self.output_dir + filename + '.png', format = 'png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        #plt.savefig(self.output_dir + filename + '.pdf', format = 'pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(self.output_dir + filename + '.pdf', format = 'pdf')
 
         # plt.show()

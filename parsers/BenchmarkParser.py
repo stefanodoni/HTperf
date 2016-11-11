@@ -1,7 +1,6 @@
 from parsers.Parser import Parser
 import pandas as pd
 
-__author__ = 'francesco'
 
 class BenchmarkParser (Parser):
     columns = [Parser.TIMESTAMP_START_STR, Parser.TIMESTAMP_END_STR, 'Run', 'TotClients',

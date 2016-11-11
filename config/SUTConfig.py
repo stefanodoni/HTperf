@@ -1,4 +1,3 @@
-__author__ = 'francesco'
 
 # ==========================================================================
 # General settings of the System Under Test (SUT)

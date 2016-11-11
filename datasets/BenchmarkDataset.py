@@ -4,7 +4,6 @@ from parsers.Parser import Parser
 from statistics.StatsGenerator import StatsGenerator
 import config.SUTConfig as sut
 
-__author__ = 'francesco'
 
 class BenchmarkDataset (HTDataset):
     def create(self, dataframe, DBconn, output_dir, test_name, using_pcm):

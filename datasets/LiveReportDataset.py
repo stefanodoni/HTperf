@@ -4,7 +4,6 @@ from parsers.Parser import Parser
 from statistics.LiveStatsGenerator import LiveStatsGenerator
 import pandas as pd
 
-__author__ = 'francesco'
 
 class LiveReportDataset (HTDataset):
     def create(self, DBconn, startTS, endTS, user_interval):

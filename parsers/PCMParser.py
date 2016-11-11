@@ -1,7 +1,6 @@
 import pandas as pd
 from parsers.Parser import Parser
 
-__author__ = 'francesco'
 
 class PCMParser (Parser):
     columns = ['SysDate', 'SysTime', 'SysEXEC', 'SysIPC', 'SysFREQ',

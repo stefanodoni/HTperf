@@ -3,7 +3,6 @@ import pandas as pd
 import dateutil.parser as dparser
 import datetime as dt
 
-__author__ = 'francesco'
 
 class PerfParser (Parser):
     columns = [Parser.TIMESTAMP_STR, 'HWElem', 'Value', 'Blank', 'Event']
