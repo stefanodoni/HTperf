@@ -203,9 +203,11 @@ class LiveHTLinearModel:
 
                 for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
                     if len(tmp_ref_tsc) == 0:
-                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                        tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_thread_any'])
+                        #tmp_ref_tsc = tmp_ref_tsc.append(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
                     else:
-                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
+                        tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_thread_any'])
+                        #tmp_ref_tsc = tmp_ref_tsc.add(dataset['perf-stats']['CPU' + str(j) + '_cpu_clk_unhalted_ref_tsc'])
 
                 tmp_ref_tsc = tmp_ref_tsc.div(self.my_sut_config.CPU_THREADS_PER_CORE)
                 result['S' + str(s) + '-C' + str(c)] = tmp_ref_tsc.div(self.my_sut_config.CPU_BASE_OPERATING_FREQUENCY)
@@ -223,6 +225,9 @@ class LiveHTLinearModel:
 
         result = result / self.my_sut_config.CPU_PHYSICAL_CORES
         result.name = "Sys_mean_cbt"
+
+        result = result.mean() # Compute the mean among all the productivities in the user defined interval
+        #print(result.head())
         return result
 
     def compute_sys_mean_utilization(self, dataset):
@@ -241,18 +246,27 @@ class LiveHTLinearModel:
     def compute_real_IPCs(self, dataset, startRun, endRun):
         startRun = startRun - 1
 
+        #print('dataset perf-stats:', dataset['perf-stats'].info())
+        #print(dataset['perf-stats'].head())
         result = {}
 
+        #print('startRun, endRun: ', startRun, endRun)
         # Compute and sort positions to be changed
-        positions = [i + 10 * times for i in range(startRun, endRun) for times in range(bac.NUM_TESTS)]
-        positions.sort()
+        #positions = [i + 10 * times for i in range(startRun, endRun) for times in range(bac.NUM_TESTS)]
+        positions = range(0, dataset['perf-stats'].index.size - 1)
+        #positions.sort()
 
+        #print('positions: ', positions)
         for s in range(self.my_sut_config.CPU_SOCKETS):
+            #print('socket: ', s)
             for c in range(self.my_sut_config.CPU_PHYSICAL_CORES_PER_SOCKET):
+                #print('core: ', c)
                 result['S' + str(s) + '-C' + str(c)] = pd.Series([0 for i in range(len(dataset['perf-stats']))], dtype=float) # Set all to zero
 
                 for i in positions:
+                    #print('position: ', i)
                     for j in self.my_sut_config.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(c)]:
+                     #print('core mapping: ', j)
                      result['S' + str(s) + '-C' + str(c)][i] = result['S' + str(s) + '-C' + str(c)][i] + dataset['perf-stats']['CPU' + str(j) + '_instructions'][i]
 
                     # Calculate IPC using unhalted clocks any of the first logical core of cpu c

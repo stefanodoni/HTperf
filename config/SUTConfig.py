@@ -35,19 +35,20 @@ class SUTConfig:
 
         # Determine the maximum frequency if using TB or not
         if int(system_config['TurboBoost']) == 0: # TB ON
-            print("TurboBoost ON")
+            #print("TurboBoost ON")
             self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY = system_config['TurboRatioLimit4Cores'] * self.CPU_BUS_CLOCK_FREQUENCY # Max Frequency when all cores are working, used to estimate the productivity
+            print('Freq max all core busy: ', self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY)
         else: # TB OFF
-            print("TurboBoost OFF")
+            #print("TurboBoost OFF")
             self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY = self.CPU_BASE_FREQUENCY
 
         # If the TSC is different from the advertised frequency we warn the user
         if self.CPU_BASE_OPERATING_FREQUENCY != self.CPU_BASE_FREQUENCY:
             print("Warning: frequencies are not equal! CPU_BASE_OPERATING_FREQUENCY: " + str(self.CPU_BASE_OPERATING_FREQUENCY) + " while CPU_BASE_FREQUENCY: " + str(self.CPU_BASE_FREQUENCY))
 
-        print("CPU_BASE_FREQUENCY: " + str(self.CPU_BASE_FREQUENCY))
-        print("CPU_BASE_OPERATING_FREQUENCY: " + str(self.CPU_BASE_OPERATING_FREQUENCY))
-        print("CPU_MAX_FREQUENCY_ALL_CORES_BUSY: " + str(self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY))
+        #print("CPU_BASE_FREQUENCY: " + str(self.CPU_BASE_FREQUENCY))
+        #print("CPU_BASE_OPERATING_FREQUENCY: " + str(self.CPU_BASE_OPERATING_FREQUENCY))
+        #print("CPU_MAX_FREQUENCY_ALL_CORES_BUSY: " + str(self.CPU_MAX_FREQUENCY_ALL_CORES_BUSY))
 
         self.CPU_SOCKETS = int(system_config['Sockets'])
         self.CPU_PHYSICAL_CORES_PER_SOCKET = int(system_config['CoresPerSocket'])
@@ -57,7 +58,7 @@ class SUTConfig:
 
         # Determine if HT is active or not
         if self.CPU_LOGICAL_CORES == system_config['OnlineCPUs']:
-            print("HyperThreading ACTIVE")
+            #print("HyperThreading ACTIVE")
             self.CPU_HT_ACTIVE = True
         elif (self.CPU_LOGICAL_CORES / 2) == system_config['OnlineCPUs']:
             print("Warning: HyperThreading seems not to be active, number of online CPUs is half the number of logical cores. Setting HT to NOT active.")
@@ -86,7 +87,7 @@ class SUTConfig:
             for core_num in range(int(self.CPU_PHYSICAL_CORES)):
                 self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING['CPU' + str(core_num)] = [core_num]
 
-        print("CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING: " + str(self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING) + "\n")
+        #print("CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING: " + str(self.CPU_PHYSICAL_TO_LOGICAL_CORES_MAPPING) + "\n")
 
     # Set parameters manually
     def set_manual(self):

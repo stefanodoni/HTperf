@@ -5,7 +5,7 @@ import datetime as dt
 
 
 class PerfParser (Parser):
-    columns = [Parser.TIMESTAMP_STR, 'HWElem', 'Value', 'Blank', 'Event']
+    columns = [Parser.TIMESTAMP_STR, 'HWElem', 'Value', 'Blank', 'Event', 'A', 'B']
 
     def parse(self, file):
         csvfile = open(file, 'rb')

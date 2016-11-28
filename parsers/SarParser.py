@@ -13,7 +13,7 @@ class SarParser (Parser):
 
     def parse(self, file):
         csvfile = open(file, 'rb')
-        dataframe = pd.read_csv(csvfile, sep=';', header=None, names=self.columns,
+        dataframe = pd.read_csv(csvfile, sep=';', header=None, names=self.columns, skiprows=1,
                                 decimal=',', index_col=False,
                                 parse_dates=[2]) #DataFrame obj
 
@@ -23,4 +23,5 @@ class SarParser (Parser):
         #print(dataframe.index.values)
 
         csvfile.close()
+	
         return dataframe
